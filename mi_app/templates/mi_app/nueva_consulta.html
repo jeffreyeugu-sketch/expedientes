@@ -1,0 +1,356 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block page_title %}Nueva Consulta{% endblock %}
+{% block page_subtitle %}Programar nueva cita médica{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <!-- Información de la Consulta -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-plus me-2"></i>Información de la Consulta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="patient_id" class="form-label required">Paciente</label>
+                            <select class="form-select" id="patient_id" name="patient_id" required>
+                                <option value="">Seleccionar paciente...</option>
+                                {% for paciente in pacientes %}
+                                <option value="{{ paciente.id }}" 
+                                        data-telefono="{{ paciente.telefono_principal }}"
+                                        data-edad="{{ paciente.edad }}">
+                                    {{ paciente.nombre_completo }} - {{ paciente.edad }} años
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="doctor_id" class="form-label required">Doctor</label>
+                            <select class="form-select" id="doctor_id" name="doctor_id" required>
+                                <option value="">Seleccionar doctor...</option>
+                                {% for doctor in doctores %}
+                                <option value="{{ doctor.id }}">
+                                    {{ doctor.nombre_completo }} - {{ doctor.especialidad }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha" class="form-label required">Fecha</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" required
+                                   min="{{ fecha_hoy|date:'Y-m-d' }}">
+                            <div class="form-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="hora" class="form-label required">Hora</label>
+                            <select class="form-select" id="hora" name="hora" required>
+                                <option value="">Seleccionar hora...</option>
+                                <option value="08:00">08:00 AM</option>
+                                <option value="08:30">08:30 AM</option>
+                                <option value="09:00">09:00 AM</option>
+                                <option value="09:30">09:30 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="10:30">10:30 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="11:30">11:30 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="14:00">02:00 PM</option>
+                                <option value="14:30">02:30 PM</option>
+                                <option value="15:00">03:00 PM</option>
+                                <option value="15:30">03:30 PM</option>
+                                <option value="16:00">04:00 PM</option>
+                                <option value="16:30">04:30 PM</option>
+                                <option value="17:00">05:00 PM</option>
+                                <option value="17:30">05:30 PM</option>
+                                <option value="18:00">06:00 PM</option>
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_consulta" class="form-label required">Tipo de Consulta</label>
+                            <select class="form-select" id="tipo_consulta" name="tipo_consulta" required>
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="general">Consulta General</option>
+                                <option value="seguimiento">Seguimiento</option>
+                                <option value="urgencia">Urgencia</option>
+                                <option value="control">Control</option>
+                                <option value="primera_vez">Primera Vez</option>
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="duracion" class="form-label">Duración Estimada</label>
+                            <select class="form-select" id="duracion" name="duracion">
+                                <option value="30">30 minutos</option>
+                                <option value="45">45 minutos</option>
+                                <option value="60">60 minutos</option>
+                                <option value="90">90 minutos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label required">Motivo de la Consulta</label>
+                        <textarea class="form-control" id="motivo" name="motivo" rows="3" required
+                                  placeholder="Describe brevemente el motivo de la consulta..."></textarea>
+                        <div class="form-feedback"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Paciente (solo lectura) -->
+            <div class="card info-card mb-4" id="patient-info" style="display: none;">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Información del Paciente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <label>Teléfono:</label>
+                                <span id="patient-telefono">-</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <label>Edad:</label>
+                                <span id="patient-edad">-</span> años
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <label>Última consulta:</label>
+                                <span id="patient-ultima">Sin consultas</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="#" id="patient-link" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="fas fa-external-link-alt me-1"></i>Ver Expediente Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verificación de Disponibilidad -->
+            <div class="card availability-card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Verificación de Disponibilidad
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="availability-check" class="availability-status">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Selecciona fecha, hora y doctor para verificar disponibilidad
+                    </div>
+                    <div id="conflictos" class="mt-3" style="display: none;">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Conflictos encontrados:</strong>
+                            <ul id="lista-conflictos" class="mb-0 mt-2"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notas Adicionales -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Notas Adicionales (Opcional)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="2"
+                                  placeholder="Notas especiales, recordatorios, alergias importantes..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="recordatorio_sms" name="recordatorio_sms">
+                                <label class="form-check-label" for="recordatorio_sms">
+                                    Enviar recordatorio por SMS
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="recordatorio_email" name="recordatorio_email">
+                                <label class="form-check-label" for="recordatorio_email">
+                                    Enviar recordatorio por email
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="card navigation-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'agenda_consultas' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        
+                        <div class="action-buttons">
+                            <button type="button" class="btn btn-outline-primary" onclick="guardarBorrador()">
+                                <i class="fas fa-save me-2"></i>Guardar Borrador
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-calendar-check me-2"></i>Programar Consulta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-check text-success me-2"></i>Consulta Programada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="success-icon mb-3">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h6 id="consultaDetails">Consulta programada exitosamente</h6>
+                <p class="text-muted">El paciente ha sido notificado</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="{% url 'agenda_consultas' %}" class="btn btn-primary">
+                    <i class="fas fa-calendar me-2"></i>Ver Agenda
+                </a>
+                <button type="button" class="btn btn-success" onclick="nuevaConsulta()">
+                    <i class="fas fa-plus me-2"></i>Otra Consulta
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set fecha mínima a hoy
+    const fechaInput = document.getElementById('fecha');
+    const today = new Date().toISOString().split('T')[0];
+    fechaInput.value = today;
+    
+    // Auto-duración según tipo de consulta
+    document.getElementById('tipo_consulta').addEventListener('change', function() {
+        const duracionSelect = document.getElementById('duracion');
+        const duraciones = {
+            'general': '30',
+            'seguimiento': '20',
+            'urgencia': '45',
+            'control': '15',
+            'primera_vez': '60'
+        };
+        
+        if (duraciones[this.value]) {
+            duracionSelect.value = duraciones[this.value];
+        }
+    });
+    
+    // Mostrar info del paciente al seleccionar
+    document.getElementById('patient_id').addEventListener('change', function() {
+        const option = this.selectedOptions[0];
+        const patientInfo = document.getElementById('patient-info');
+        
+        if (this.value) {
+            const telefono = option.dataset.telefono;
+            const edad = option.dataset.edad;
+            
+            document.getElementById('patient-telefono').textContent = telefono;
+            document.getElementById('patient-edad').textContent = edad;
+            document.getElementById('patient-link').href = `/pacientes/${this.value}/`;
+            
+            patientInfo.style.display = 'block';
+        } else {
+            patientInfo.style.display = 'none';
+        }
+    });
+    
+    // Verificar disponibilidad
+    function checkAvailability() {
+        const fecha = document.getElementById('fecha').value;
+        const hora = document.getElementById('hora').value;
+        const doctorId = document.getElementById('doctor_id').value;
+        
+        if (fecha && hora && doctorId) {
+            const statusDiv = document.getElementById('availability-check');
+            statusDiv.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Horario disponible';
+            statusDiv.className = 'availability-status available';
+        }
+    }
+    
+    // Event listeners para verificación
+    ['fecha', 'hora', 'doctor_id'].forEach(id => {
+        document.getElementById(id).addEventListener('change', checkAvailability);
+    });
+    
+    // Mostrar modal si hay mensaje de éxito
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                // Obtener datos del paciente del último formulario
+                const pacienteSelect = document.getElementById('patient_id');
+                const pacienteNombre = pacienteSelect.options[pacienteSelect.selectedIndex]?.text || 'el paciente';
+                
+                // Actualizar modal con información
+                document.getElementById('consultaDetails').textContent = 
+                    'Consulta programada para ' + pacienteNombre;
+                
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+                modal.show();
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+});
+
+function guardarBorrador() {
+    console.log('Guardando borrador...');
+}
+
+function nuevaConsulta() {
+    window.location.href = '{% url "nueva_consulta" %}';
+}
+</script>
+{% endblock %}

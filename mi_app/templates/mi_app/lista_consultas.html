@@ -1,0 +1,53 @@
+{% extends 'mi_app/base.html' %}
+
+{% block nav_consultas %}active{% endblock %}
+
+{% block page_title %}Lista de Consultas{% endblock %}
+{% block page_subtitle %}Gestión de consultas médicas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Lista de Consultas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Paciente</th>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>Motivo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for consulta in consultas %}
+                            <tr>
+                                <td>{{ consulta.id }}</td>
+                                <td>{{ consulta.paciente }}</td>
+                                <td>{{ consulta.fecha }}</td>
+                                <td>{{ consulta.hora }}</td>
+                                <td>{{ consulta.motivo }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary">Ver</button>
+                                    <button class="btn btn-sm btn-success">Editar</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No hay consultas registradas</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

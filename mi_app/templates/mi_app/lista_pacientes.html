@@ -1,0 +1,480 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block nav_pacientes %}active{% endblock %}
+
+{% block page_title %}Gestión de Pacientes{% endblock %}
+{% block page_subtitle %}Lista completa de pacientes registrados{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/pacientes.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Panel de control y filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card control-panel">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <!-- Búsqueda -->
+                    <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+                        <div class="search-container">
+                            <input type="text" class="form-control search-input" 
+                                   placeholder="Buscar por nombre, teléfono o ID..." 
+                                   id="searchPatients">
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtros -->
+                    <div class="col-lg-6 col-md-6 mb-3 mb-lg-0">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <select class="form-select filter-select" id="filterAge">
+                                    <option value="">Todas las edades</option>
+                                    <option value="0-18">0-18 años</option>
+                                    <option value="19-35">19-35 años</option>
+                                    <option value="36-60">36-60 años</option>
+                                    <option value="60+">60+ años</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <select class="form-select filter-select" id="filterStatus">
+                                    <option value="">Todos los estados</option>
+                                    <option value="activo">Activos</option>
+                                    <option value="inactivo">Inactivos</option>
+                                    <option value="nuevo">Nuevos</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <select class="form-select filter-select" id="sortBy">
+                                    <option value="nombre">Ordenar por nombre</option>
+                                    <option value="fecha">Fecha de registro</option>
+                                    <option value="ultima_consulta">Última consulta</option>
+                                    <option value="edad">Edad</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Acciones -->
+                    <div class="col-lg-2 text-end">
+                        <a href="{% url 'nuevo_paciente' %}" class="btn btn-success btn-new-patient">
+                            <i class="fas fa-user-plus me-2"></i>Nuevo Paciente
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="mini-stat-card stat-total">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ total_pacientes }}</div>
+                <div class="stat-label">Total Pacientes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="mini-stat-card stat-new">
+            <div class="stat-icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ nuevos_mes }}</div>
+                <div class="stat-label">Nuevos este mes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="mini-stat-card stat-active">
+            <div class="stat-icon">
+                <i class="fas fa-heartbeat"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ activos_mes }}</div>
+                <div class="stat-label">Activos este mes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="mini-stat-card stat-pending">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ citas_pendientes }}</div>
+                <div class="stat-label">Citas pendientes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de pacientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card patients-table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Lista de Pacientes
+                </h5>
+                <div class="table-controls">
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleViewMode()">
+                        <i class="fas fa-th-large me-1" id="viewToggleIcon"></i>
+                        <span id="viewToggleText">Vista Tarjetas</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="exportPatients()">
+                        <i class="fas fa-download me-1"></i>Exportar
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <!-- Vista de tabla (por defecto) -->
+                <div id="tableView" class="table-responsive">
+                    <table class="table table-hover patients-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
+                                <th>ID</th>
+                                <th>Paciente</th>
+                                <th>Edad</th>
+                                <th>Teléfono</th>
+                                <th>Última Consulta</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientsTableBody">
+                            {% for paciente in pacientes %}
+                            <tr class="patient-row" data-patient-id="{{ paciente.id }}">
+                                <td>
+                                    <input type="checkbox" class="form-check-input patient-checkbox" value="{{ paciente.id }}">
+                                </td>
+                                <td>
+                                    <span class="patient-id">#{{ paciente.id|stringformat:"04d" }}</span>
+                                </td>
+                                <td>
+                                    <div class="patient-info">
+                                        <div class="patient-avatar">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div class="patient-details">
+                                            <div class="patient-name">{{ paciente.nombre }}</div>
+                                            <div class="patient-email">{{ paciente.email|default:"Sin email" }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="age-badge">{{ paciente.edad }} años</span>
+                                </td>
+                                <td>
+                                    <span class="phone-number">{{ paciente.telefono }}</span>
+                                </td>
+                                <td>
+                                    <div class="last-visit">
+                                        <div class="visit-date">{{ paciente.ultima_consulta }}</div>
+                                        <div class="visit-time">{{ paciente.dias_desde_consulta }} días</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-badge status-{{ paciente.estado }}">
+                                        {{ paciente.estado|capfirst }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="viewPatient({{ paciente.id }})" 
+                                                title="Ver expediente">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" 
+                                                onclick="newConsult({{ paciente.id }})" 
+                                                title="Nueva consulta">
+                                            <i class="fas fa-stethoscope"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="editPatient({{ paciente.id }})" 
+                                                title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                    type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-phone me-2"></i>Llamar</a></li>
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2"></i>Enviar Email</a></li>
+                                                <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Imprimir Historial</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Eliminar</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Vista de tarjetas (oculta por defecto) -->
+                <div id="cardView" class="cards-grid" style="display: none;">
+                    {% for paciente in pacientes %}
+                    <div class="patient-card" data-patient-id="{{ paciente.id }}">
+                        <div class="patient-card-header">
+                            <div class="patient-card-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="patient-card-status">
+                                <span class="badge status-badge status-{{ paciente.estado }}">
+                                    {{ paciente.estado|capfirst }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="patient-card-body">
+                            <h6 class="patient-card-name">{{ paciente.nombre }}</h6>
+                            <div class="patient-card-info">
+                                <div class="info-item">
+                                    <i class="fas fa-id-badge me-2"></i>
+                                    ID: #{{ paciente.id|stringformat:"04d" }}
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-birthday-cake me-2"></i>
+                                    {{ paciente.edad }} años
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-phone me-2"></i>
+                                    {{ paciente.telefono }}
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    Última: {{ paciente.ultima_consulta }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="patient-card-footer">
+                            <button class="btn btn-sm btn-primary" onclick="viewPatient({{ paciente.id }})">
+                                <i class="fas fa-eye me-1"></i>Ver
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="newConsult({{ paciente.id }})">
+                                <i class="fas fa-stethoscope me-1"></i>Consulta
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editPatient({{ paciente.id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Paginación -->
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="pagination-info">
+                        Mostrando 1-10 de {{ total_pacientes }} pacientes
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                            </li>
+                            <li class="page-item active">
+                                <span class="page-link">1</span>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">2</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">3</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de acciones múltiples -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Acciones Múltiples</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Has seleccionado <span id="selectedCount">0</span> pacientes.</p>
+                <p>¿Qué acción deseas realizar?</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="bulkExport()">
+                        <i class="fas fa-download me-2"></i>Exportar seleccionados
+                    </button>
+                    <button class="btn btn-outline-info" onclick="bulkEmail()">
+                        <i class="fas fa-envelope me-2"></i>Enviar email masivo
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="bulkUpdate()">
+                        <i class="fas fa-edit me-2"></i>Actualización masiva
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentViewMode = 'table';
+let selectedPatients = [];
+
+// Funciones de vista
+function toggleViewMode() {
+    const tableView = document.getElementById('tableView');
+    const cardView = document.getElementById('cardView');
+    const toggleIcon = document.getElementById('viewToggleIcon');
+    const toggleText = document.getElementById('viewToggleText');
+    
+    if (currentViewMode === 'table') {
+        tableView.style.display = 'none';
+        cardView.style.display = 'block';
+        toggleIcon.className = 'fas fa-list me-1';
+        toggleText.textContent = 'Vista Lista';
+        currentViewMode = 'cards';
+    } else {
+        tableView.style.display = 'block';
+        cardView.style.display = 'none';
+        toggleIcon.className = 'fas fa-th-large me-1';
+        toggleText.textContent = 'Vista Tarjetas';
+        currentViewMode = 'table';
+    }
+}
+
+// Funciones de pacientes
+function viewPatient(patientId) {
+    window.location.href = `/pacientes/${patientId}/`;
+}
+
+function newConsult(patientId) {
+    console.log('Nueva consulta para paciente:', patientId);
+    // Implementar modal o redirection
+}
+
+function editPatient(patientId) {
+    console.log('Editar paciente:', patientId);
+    // Implementar modal o redirection
+}
+
+// Búsqueda y filtros
+function setupSearchAndFilters() {
+    const searchInput = document.getElementById('searchPatients');
+    const filterAge = document.getElementById('filterAge');
+    const filterStatus = document.getElementById('filterStatus');
+    const sortBy = document.getElementById('sortBy');
+    
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            filterPatients();
+        }, 300);
+    });
+    
+    [filterAge, filterStatus, sortBy].forEach(filter => {
+        filter.addEventListener('change', filterPatients);
+    });
+}
+
+function filterPatients() {
+    const searchTerm = document.getElementById('searchPatients').value.toLowerCase();
+    const ageFilter = document.getElementById('filterAge').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+    const sortFilter = document.getElementById('sortBy').value;
+    
+    console.log('Filtrar pacientes:', { searchTerm, ageFilter, statusFilter, sortFilter });
+    // Implementar filtrado real con AJAX
+}
+
+// Selección múltiple
+function setupMultiSelect() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.patient-checkbox');
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateSelectedPatients();
+    });
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedPatients);
+    });
+}
+
+function updateSelectedPatients() {
+    const checkboxes = document.querySelectorAll('.patient-checkbox:checked');
+    selectedPatients = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedPatients.length > 0) {
+        showBulkActions();
+    } else {
+        hideBulkActions();
+    }
+    
+    document.getElementById('selectedCount').textContent = selectedPatients.length;
+}
+
+function showBulkActions() {
+    // Mostrar barra de acciones múltiples
+    console.log('Mostrar acciones múltiples');
+}
+
+function hideBulkActions() {
+    // Ocultar barra de acciones múltiples
+    console.log('Ocultar acciones múltiples');
+}
+
+// Acciones múltiples
+function bulkExport() {
+    console.log('Exportar pacientes:', selectedPatients);
+}
+
+function bulkEmail() {
+    console.log('Enviar email a pacientes:', selectedPatients);
+}
+
+function bulkUpdate() {
+    console.log('Actualizar pacientes:', selectedPatients);
+}
+
+function exportPatients() {
+    console.log('Exportar todos los pacientes');
+}
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    setupSearchAndFilters();
+    setupMultiSelect();
+    
+    console.log('Vista de pacientes cargada');
+});
+</script>
+{% endblock %}

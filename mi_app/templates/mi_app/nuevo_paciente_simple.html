@@ -1,0 +1,224 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block nav_nuevo_paciente %}active{% endblock %}
+
+{% block page_title %}Nuevo Paciente{% endblock %}
+{% block page_subtitle %}Registro de paciente (versión simplificada){% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <!-- Datos Personales -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Datos Personales
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombres" class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellidos" class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" id="apellidos" name="apellidos" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento *</label>
+                            <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="genero" class="form-label">Género *</label>
+                            <select class="form-select" id="genero" name="genero" required>
+                                <option value="">Seleccionar género</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="femenino">Femenino</option>
+                                <option value="otro">Otro</option>
+                                <option value="no_especifica">Prefiero no especificar</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="documento_id" class="form-label">Documento de Identidad *</label>
+                            <input type="text" class="form-control" id="documento_id" name="documento_id" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ocupacion" class="form-label">Ocupación</label>
+                            <input type="text" class="form-control" id="ocupacion" name="ocupacion">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <textarea class="form-control" id="direccion" name="direccion" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Médica -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-heartbeat me-2"></i>Información Médica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="tipo_sangre" class="form-label">Tipo de Sangre</label>
+                            <select class="form-select" id="tipo_sangre" name="tipo_sangre">
+                                <option value="">Seleccionar</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="desconocido">Desconocido</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="peso" class="form-label">Peso (kg)</label>
+                            <input type="number" class="form-control" id="peso" name="peso" step="0.1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="altura" class="form-label">Altura (cm)</label>
+                            <input type="number" class="form-control" id="altura" name="altura">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="alergias" class="form-label">Alergias</label>
+                        <textarea class="form-control" id="alergias" name="alergias" rows="2" 
+                                  placeholder="Medicamentos, alimentos, etc. Escribir 'Ninguna' si no tiene"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="medicamentos_actuales" class="form-label">Medicamentos Actuales</label>
+                        <textarea class="form-control" id="medicamentos_actuales" name="medicamentos_actuales" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacto -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-phone me-2"></i>Información de Contacto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono_principal" class="form-label">Teléfono Principal *</label>
+                            <input type="tel" class="form-control" id="telefono_principal" name="telefono_principal" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="text-primary mb-3">Contacto de Emergencia</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="emergencia_nombre" class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="emergencia_nombre" name="emergencia_nombre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="emergencia_parentesco" class="form-label">Parentesco *</label>
+                            <select class="form-select" id="emergencia_parentesco" name="emergencia_parentesco" required>
+                                <option value="">Seleccionar</option>
+                                <option value="padre">Padre</option>
+                                <option value="madre">Madre</option>
+                                <option value="esposo">Esposo</option>
+                                <option value="esposa">Esposa</option>
+                                <option value="hijo">Hijo</option>
+                                <option value="hija">Hija</option>
+                                <option value="hermano">Hermano</option>
+                                <option value="hermana">Hermana</option>
+                                <option value="amigo">Amigo</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="emergencia_telefono" class="form-label">Teléfono *</label>
+                            <input type="tel" class="form-control" id="emergencia_telefono" name="emergencia_telefono" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="seguro_medico" class="form-label">Seguro Médico</label>
+                            <input type="text" class="form-control" id="seguro_medico" name="seguro_medico">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <button type="submit" class="btn btn-success btn-lg me-3">
+                        <i class="fas fa-save me-2"></i>Registrar Paciente
+                    </button>
+                    <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de éxito -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">¡Paciente Registrado!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                <h6 class="mt-3">El paciente ha sido registrado exitosamente</h6>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'lista_pacientes' %}" class="btn btn-primary">Ver Lista de Pacientes</a>
+                <a href="{% url 'nuevo_paciente' %}" class="btn btn-success">Registrar Otro</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mostrar modal si hay mensaje de éxito
+document.addEventListener('DOMContentLoaded', function() {
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                var modal = new bootstrap.Modal(document.getElementById('successModal'));
+                modal.show();
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,466 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block page_title %}{{ paciente.nombre_completo }}{% endblock %}
+{% block page_subtitle %}Expediente médico completo{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/pacientes.css' %}">
+<link rel="stylesheet" href="{% static 'mi_app/css/consultas.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Columna Izquierda: Información del Paciente -->
+    <div class="col-lg-4 mb-4">
+        <!-- Tarjeta Principal del Paciente -->
+        <div class="card patient-profile-card">
+            <div class="card-body text-center">
+                <div class="patient-avatar-large mb-3">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h4 class="mb-1">{{ paciente.nombre_completo }}</h4>
+                <p class="text-muted mb-3">{{ paciente.edad }} años • {{ paciente.get_genero_display }}</p>
+                
+                <div class="patient-status mb-3">
+                    <span class="badge status-{{ paciente.estado_paciente }} px-3 py-2">
+                        {{ paciente.estado_paciente|title }}
+                    </span>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'nueva_consulta' %}?patient={{ paciente.id }}" class="btn btn-success">
+                        <i class="fas fa-calendar-plus me-2"></i>Nueva Consulta
+                    </a>
+                    <button class="btn btn-outline-primary" onclick="editarPaciente()">
+                        <i class="fas fa-edit me-2"></i>Editar Información
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información de Contacto -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-phone me-2"></i>Contacto
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <i class="fas fa-phone text-primary"></i>
+                    <div>
+                        <small class="text-muted">Teléfono</small>
+                        <div>{{ paciente.telefono_principal }}</div>
+                    </div>
+                </div>
+                {% if paciente.email %}
+                <div class="info-row">
+                    <i class="fas fa-envelope text-primary"></i>
+                    <div>
+                        <small class="text-muted">Email</small>
+                        <div>{{ paciente.email }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <i class="fas fa-map-marker-alt text-primary"></i>
+                    <div>
+                        <small class="text-muted">Dirección</small>
+                        <div>{{ paciente.direccion|default:"No registrada" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información Médica Rápida -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-heartbeat me-2"></i>Información Médica
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="medical-info-grid">
+                    <div class="medical-info-item">
+                        <i class="fas fa-tint"></i>
+                        <div>
+                            <small>Tipo de Sangre</small>
+                            <strong>{{ paciente.tipo_sangre|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                    <div class="medical-info-item">
+                        <i class="fas fa-weight"></i>
+                        <div>
+                            <small>Peso</small>
+                            <strong>{{ paciente.peso|default:"N/A" }} kg</strong>
+                        </div>
+                    </div>
+                    <div class="medical-info-item">
+                        <i class="fas fa-ruler-vertical"></i>
+                        <div>
+                            <small>Altura</small>
+                            <strong>{{ paciente.altura|default:"N/A" }} cm</strong>
+                        </div>
+                    </div>
+                    {% if paciente.peso and paciente.altura %}
+                    <div class="medical-info-item">
+                        <i class="fas fa-calculator"></i>
+                        <div>
+                            <small>IMC</small>
+                            <strong>{{ paciente.imc|default:"N/A" }}</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if paciente.alergias %}
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Alergias:</strong><br>
+                    {{ paciente.alergias }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Estadísticas Rápidas -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Estadísticas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="stat-item">
+                    <i class="fas fa-calendar-check text-success"></i>
+                    <div>
+                        <small>Total Consultas</small>
+                        <strong>{{ total_consultas }}</strong>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock text-info"></i>
+                    <div>
+                        <small>Última Consulta</small>
+                        <strong>
+                            {% if ultima_consulta %}
+                                {{ ultima_consulta.fecha_consulta|date:"d/m/Y" }}
+                            {% else %}
+                                Sin consultas
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                    <div>
+                        <small>Próxima Cita</small>
+                        <strong>
+                            {% if proxima_consulta %}
+                                {{ proxima_consulta.fecha_consulta|date:"d/m/Y" }}
+                            {% else %}
+                                No programada
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Columna Derecha: Historial y Detalles -->
+    <div class="col-lg-8">
+        <!-- Tabs de Navegación -->
+        <ul class="nav nav-tabs custom-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#historial" type="button">
+                    <i class="fas fa-history me-2"></i>Historial de Consultas
+                    <span class="badge bg-primary ms-2">{{ total_consultas }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#expediente" type="button">
+                    <i class="fas fa-file-medical me-2"></i>Expediente Médico
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#documentos" type="button">
+                    <i class="fas fa-folder me-2"></i>Documentos
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Contenido de los Tabs -->
+        <div class="tab-content">
+            <!-- Tab: Historial de Consultas -->
+            <div class="tab-pane fade show active" id="historial">
+                {% if consultas %}
+                    <!-- Estadísticas Rápidas del Historial -->
+                    <div class="quick-stats">
+                        <div class="quick-stat-item">
+                            <div class="quick-stat-number">{{ consultas_completadas.count }}</div>
+                            <div class="quick-stat-label">Completadas</div>
+                        </div>
+                        <div class="quick-stat-item">
+                            <div class="quick-stat-number">{{ consultas_programadas.count }}</div>
+                            <div class="quick-stat-label">Programadas</div>
+                        </div>
+                        <div class="quick-stat-item">
+                            <div class="quick-stat-number">{{ consultas_en_curso.count }}</div>
+                            <div class="quick-stat-label">En Curso</div>
+                        </div>
+                        <!-- ← AGREGAR ESTA TARJETA -->
+                        <div class="quick-stat-item">
+                            <div class="quick-stat-number">{{ consultas_canceladas.count }}</div>
+                            <div class="quick-stat-label">Canceladas</div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros de Estado -->
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="todas" onclick="filtrarConsultas('todas')">
+                            <i class="fas fa-list me-1"></i>Todas
+                            <span class="badge">{{ total_consultas }}</span>
+                        </button>
+                        <button class="filter-tab" data-filter="completada" onclick="filtrarConsultas('completada')">
+                            <i class="fas fa-check-circle me-1"></i>Completadas
+                            <span class="badge">{{ consultas_completadas.count }}</span>
+                        </button>
+                        <button class="filter-tab" data-filter="programada" onclick="filtrarConsultas('programada')">
+                            <i class="fas fa-clock me-1"></i>Programadas
+                            <span class="badge">{{ consultas_programadas.count }}</span>
+                        </button>
+                        <button class="filter-tab" data-filter="en_curso" onclick="filtrarConsultas('en_curso')">
+                            <i class="fas fa-play-circle me-1"></i>En Curso
+                            <span class="badge">{{ consultas_en_curso.count }}</span>
+                        </button>
+                        <!-- ← AGREGAR ESTE BOTÓN -->
+                        <button class="filter-tab" data-filter="cancelada" onclick="filtrarConsultas('cancelada')">
+                            <i class="fas fa-times-circle me-1"></i>Canceladas
+                            <span class="badge">{{ consultas_canceladas.count }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Timeline de Consultas -->
+                    <div class="consultas-timeline" id="consultasTimeline">
+                        {% for consulta in consultas %}
+                        <div class="consulta-timeline-item" data-estado="{{ consulta.estado }}">
+                            <div class="consulta-timeline-marker">
+                                <i class="fas fa-{% if consulta.estado == 'completada' %}check-circle{% elif consulta.estado == 'programada' %}clock{% else %}play-circle{% endif %}"></i>
+                            </div>
+                            <div class="consulta-timeline-content">
+                                <div class="consulta-timeline-header">
+                                    <div>
+                                        <h6 class="mb-1">{{ consulta.get_tipo_consulta_display }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>{{ consulta.fecha_consulta|date:"d/m/Y H:i" }}
+                                            <i class="fas fa-user-md ms-3 me-1"></i>Dr. {{ consulta.doctor.apellidos }}
+                                        </small>
+                                    </div>
+                                    <span class="badge status-{{ consulta.estado }}">
+                                        {{ consulta.get_estado_display }}
+                                    </span>
+                                </div>
+                                
+                                <div class="consulta-timeline-body">
+                                    <p class="mb-2">
+                                        <strong><i class="fas fa-comment-medical me-2"></i>Motivo:</strong> 
+                                        {{ consulta.motivo }}
+                                    </p>
+                                    
+                                    {% if consulta.estado == 'completada' %}
+                                        {% if consulta.diagnostico %}
+                                        <p class="mb-2">
+                                            <strong><i class="fas fa-diagnoses me-2"></i>Diagnóstico:</strong> 
+                                            {{ consulta.diagnostico|truncatewords:25 }}
+                                        </p>
+                                        {% endif %}
+                                        
+                                        {% if consulta.tratamiento %}
+                                        <p class="mb-2">
+                                            <strong><i class="fas fa-prescription-bottle-alt me-2"></i>Tratamiento:</strong> 
+                                            {{ consulta.tratamiento|truncatewords:20 }}
+                                        </p>
+                                        {% endif %}
+                                        
+                                        {% if consulta.presion_arterial or consulta.temperatura or consulta.peso_consulta %}
+                                        <div class="signos-vitales-compact mt-3">
+                                            {% if consulta.presion_arterial %}
+                                            <span class="signo-vital">
+                                                <i class="fas fa-heartbeat"></i> {{ consulta.presion_arterial }}
+                                            </span>
+                                            {% endif %}
+                                            {% if consulta.temperatura %}
+                                            <span class="signo-vital">
+                                                <i class="fas fa-thermometer-half"></i> {{ consulta.temperatura }}°C
+                                            </span>
+                                            {% endif %}
+                                            {% if consulta.peso_consulta %}
+                                            <span class="signo-vital">
+                                                <i class="fas fa-weight"></i> {{ consulta.peso_consulta }}kg
+                                            </span>
+                                            {% endif %}
+                                            {% if consulta.frecuencia_cardiaca %}
+                                            <span class="signo-vital">
+                                                <i class="fas fa-heart"></i> {{ consulta.frecuencia_cardiaca }} bpm
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+
+                                        {% if consulta.proxima_cita %}
+                                        <p class="mb-2 mt-3">
+                                            <i class="fas fa-calendar-check text-info me-2"></i>
+                                            <strong>Próxima cita:</strong> {{ consulta.proxima_cita|date:"d/m/Y" }}
+                                        </p>
+                                        {% endif %}
+                                    {% elif consulta.estado == 'programada' %}
+                                        <div class="alert alert-info mt-3 mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Consulta programada</strong> - El paciente tiene cita el {{ consulta.fecha_consulta|date:"d/m/Y" }} a las {{ consulta.fecha_consulta|date:"H:i" }}
+                                        </div>
+                                    {% elif consulta.estado == 'en_curso' %}
+                                        <div class="alert alert-warning mt-3 mb-0">
+                                            <i class="fas fa-clock me-2"></i>
+                                            <strong>Consulta en curso</strong> - Actualmente en progreso
+                                        </div>
+                                    {% elif consulta.estado == 'cancelada' %}
+                                    <div class="alert alert-danger mt-3 mb-0">
+                                        <i class="fas fa-times-circle me-2"></i>
+                                        <strong>Consulta cancelada</strong>
+                                        {% if consulta.observaciones and 'Motivo:' in consulta.observaciones %}
+                                            <br><small>{{ consulta.observaciones|linebreaksbr }}</small>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="consulta-timeline-actions">
+                                    <a href="{% url 'detalle_consulta' consulta.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye me-1"></i>Ver Detalles
+                                    </a>
+
+                                    {% if consulta.estado == 'programada' %}
+                                        <button class="btn btn-sm btn-outline-warning" onclick="editarConsulta({{ consulta.id }})">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="cancelarConsulta({{ consulta.id }}, '{{ consulta.patient.nombre_completo }}')">
+                                            <i class="fas fa-times me-1"></i>Cancelar
+                                        </button>
+                                    {% elif consulta.estado == 'en_curso' %}
+                                        <button class="btn btn-sm btn-outline-danger" onclick="cancelarConsulta({{ consulta.id }}, '{{ consulta.patient.nombre_completo }}')">
+                                            <i class="fas fa-times me-1"></i>Cancelar
+                                        </button>
+                                    {% elif consulta.estado == 'completada' %}
+                                        <button class="btn btn-sm btn-outline-info" onclick="imprimirConsulta({{ consulta.id }})">
+                                            <i class="fas fa-print me-1"></i>Imprimir
+                                        </button>
+                                    {% elif consulta.estado == 'cancelada' %}
+                                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                                            <i class="fas fa-ban me-1"></i>Cancelada
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if total_consultas > 10 %}
+                    <div class="load-more-btn">
+                        <button class="btn btn-outline-primary" onclick="cargarMasConsultas()">
+                            <i class="fas fa-chevron-down me-2"></i>Cargar Más Consultas
+                        </button>
+                        <p class="text-muted mt-2 mb-0">
+                            Mostrando 10 de {{ total_consultas }} consultas
+                        </p>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-history">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h5>Sin Historial de Consultas</h5>
+                        <p class="text-muted mb-4">Este paciente no tiene consultas registradas en su expediente</p>
+                        <a href="{% url 'nueva_consulta' %}?patient={{ paciente.id }}" class="btn btn-success btn-lg">
+                            <i class="fas fa-plus me-2"></i>Programar Primera Consulta
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Tab: Expediente Médico -->
+            <div class="tab-pane fade" id="expediente">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Información Médica Completa</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <h6 class="text-primary">
+                                    <i class="fas fa-pills me-2"></i>Medicamentos Actuales
+                                </h6>
+                                <p>{{ paciente.medicamentos_actuales|default:"Ninguno registrado" }}</p>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <h6 class="text-primary">
+                                    <i class="fas fa-heartbeat me-2"></i>Enfermedades Crónicas
+                                </h6>
+                                <p>{{ paciente.enfermedades_cronicas|default:"Ninguna registrada" }}</p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <h6 class="text-primary">
+                                    <i class="fas fa-dna me-2"></i>Antecedentes Familiares
+                                </h6>
+                                <p>{{ paciente.antecedentes_familiares|default:"No registrados" }}</p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">
+                                    <i class="fas fa-smoking me-2"></i>Hábitos
+                                </h6>
+                                <p><strong>Fuma:</strong> {{ paciente.get_fuma_display|default:"No especificado" }}</p>
+                                <p><strong>Alcohol:</strong> {{ paciente.get_alcohol_display|default:"No especificado" }}</p>
+                            </div>
+                            {% if expediente %}
+                            <div class="col-md-6">
+                                <h6 class="text-primary">
+                                    <i class="fas fa-notes-medical me-2"></i>Notas Importantes
+                                </h6>
+                                <p>{{ expediente.notas_importantes|default:"Sin notas adicionales" }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Documentos -->
+            <div class="tab-pane fade" id="documentos">
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h6>Sin Documentos</h6>
+                    <p class="text-muted">La gestión de documentos estará disponible próximamente</p>
+                    <button class="btn btn-primary" disabled>
+                        <i class="fas fa-upload me-2"></i>Subir Documento
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'mi_app/js/detalle_paciente.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Expedientes Clínicos{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- CSS personalizado -->
+    <link rel="stylesheet" href="{% static 'mi_app/css/base.css' %}">
+    {% block extra_css %}
+    {% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <div class="sidebar-header">
+                    <h4 class="text-white mb-0">
+                        <i class="fas fa-heartbeat me-2"></i>
+                        MedApp
+                    </h4>
+                    <small class="text-white-50">Sistema de Expedientes</small>
+                </div>
+                
+                <nav class="nav flex-column mt-4">
+                    <a class="nav-link {% block nav_dashboard %}{% endblock %}" href="{% url 'dashboard' %}">
+                        <i class="fas fa-tachometer-alt me-3"></i>
+                        Dashboard
+                    </a>
+                    <a class="nav-link {% block nav_pacientes %}{% endblock %}" href="{% url 'lista_pacientes' %}">
+                        <i class="fas fa-users me-3"></i>
+                        Pacientes
+                    </a>
+                    <a class="nav-link {% block nav_nuevo_paciente %}{% endblock %}" href="{% url 'nuevo_paciente' %}">
+                        <i class="fas fa-user-plus me-3"></i>
+                        Nuevo Paciente
+                    </a>
+                    <a class="nav-link {% block nav_consultas %}{% endblock %}" href="{% url 'agenda_consultas' %}">
+                        <i class="fas fa-stethoscope me-3"></i>
+                        Consultas
+                    </a>
+                    <a class="nav-link {% block nav_reportes %}{% endblock %}" href="#reportes">
+                        <i class="fas fa-chart-bar me-3"></i>
+                        Reportes
+                    </a>
+                    <a class="nav-link {% block nav_configuracion %}{% endblock %}" href="#configuracion">
+                        <i class="fas fa-cog me-3"></i>
+                        Configuración
+                    </a>
+                </nav>
+            </div>
+            
+            <!-- Main content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <!-- Top navbar -->
+                <div class="top-navbar">
+                    <div class="navbar-content">
+                        <div>
+                            <h5 class="mb-0">{% block page_title %}Panel Principal{% endblock %}</h5>
+                            <small class="text-muted">{% block page_subtitle %}Bienvenido al sistema de expedientes{% endblock %}</small>
+                        </div>
+                        <div class="navbar-actions">
+                            <div class="search-container">
+                                <input type="text" class="form-control search-box" placeholder="Buscar paciente...">
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle user-dropdown" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user me-2"></i>Dr. Usuario
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Perfil</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configuración</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content area -->
+                <div class="content-area">
+                    {% block content %}
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- JS personalizado -->
+    <script src="{% static 'mi_app/js/main.js' %}"></script>
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

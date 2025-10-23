@@ -1,0 +1,352 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block page_title %}Editar Consulta{% endblock %}
+{% block page_subtitle %}Modificar cita médica programada{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/forms.css' %}">
+<style>
+/* Estilos específicos para edición */
+.info-anterior {
+    background: linear-gradient(135deg, #fff3cd 0%, #fff8dc 100%);
+    border-left: 4px solid #ffc107;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.info-anterior h6 {
+    color: #856404;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.info-anterior .info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.info-anterior .info-item:last-child {
+    border-bottom: none;
+}
+
+.info-anterior .label {
+    font-weight: 500;
+    color: #856404;
+}
+
+.info-anterior .value {
+    color: #533f03;
+    font-weight: 600;
+}
+
+.alert-warning-edit {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-left: 4px solid #ffc107;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <!-- Alerta de información -->
+        <div class="alert alert-warning-edit mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Estás editando una consulta programada.</strong>
+            Los cambios se guardarán en el historial de la consulta.
+        </div>
+
+        <!-- Información de la consulta anterior -->
+        <div class="info-anterior">
+            <h6><i class="fas fa-history me-2"></i>Información Actual</h6>
+            <div class="info-item">
+                <span class="label">Paciente:</span>
+                <span class="value">{{ consulta.patient.nombre_completo }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Doctor:</span>
+                <span class="value">{{ consulta.doctor.nombre_completo }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Fecha y Hora:</span>
+                <span class="value">{{ consulta.fecha_consulta|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Tipo:</span>
+                <span class="value">{{ consulta.get_tipo_consulta_display }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Motivo:</span>
+                <span class="value">{{ consulta.motivo|truncatewords:15 }}</span>
+            </div>
+        </div>
+
+        <!-- Formulario de edición -->
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <!-- Información de la Consulta -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Modificar Datos de la Consulta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="patient_id" class="form-label required">Paciente</label>
+                            <select class="form-select" id="patient_id" name="patient_id" required>
+                                {% for paciente in pacientes %}
+                                <option value="{{ paciente.id }}" 
+                                        {% if paciente.id == consulta.patient.id %}selected{% endif %}
+                                        data-telefono="{{ paciente.telefono_principal }}"
+                                        data-edad="{{ paciente.edad }}">
+                                    {{ paciente.nombre_completo }} - {{ paciente.edad }} años
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="doctor_id" class="form-label required">Doctor</label>
+                            <select class="form-select" id="doctor_id" name="doctor_id" required>
+                                {% for doctor in doctores %}
+                                <option value="{{ doctor.id }}"
+                                        {% if doctor.id == consulta.doctor.id %}selected{% endif %}>
+                                    {{ doctor.nombre_completo }} - {{ doctor.especialidad }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha" class="form-label required">Nueva Fecha</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" required
+                                   value="{{ consulta.fecha_consulta|date:'Y-m-d' }}"
+                                   min="{{ fecha_hoy|date:'Y-m-d' }}">
+                            <div class="form-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="hora" class="form-label required">Nueva Hora</label>
+                            <select class="form-select" id="hora" name="hora" required>
+                                <option value="">Seleccionar hora...</option>
+                                <option value="08:00" {% if consulta.fecha_consulta|date:'H:i' == '08:00' %}selected{% endif %}>08:00 AM</option>
+                                <option value="08:30" {% if consulta.fecha_consulta|date:'H:i' == '08:30' %}selected{% endif %}>08:30 AM</option>
+                                <option value="09:00" {% if consulta.fecha_consulta|date:'H:i' == '09:00' %}selected{% endif %}>09:00 AM</option>
+                                <option value="09:30" {% if consulta.fecha_consulta|date:'H:i' == '09:30' %}selected{% endif %}>09:30 AM</option>
+                                <option value="10:00" {% if consulta.fecha_consulta|date:'H:i' == '10:00' %}selected{% endif %}>10:00 AM</option>
+                                <option value="10:30" {% if consulta.fecha_consulta|date:'H:i' == '10:30' %}selected{% endif %}>10:30 AM</option>
+                                <option value="11:00" {% if consulta.fecha_consulta|date:'H:i' == '11:00' %}selected{% endif %}>11:00 AM</option>
+                                <option value="11:30" {% if consulta.fecha_consulta|date:'H:i' == '11:30' %}selected{% endif %}>11:30 AM</option>
+                                <option value="12:00" {% if consulta.fecha_consulta|date:'H:i' == '12:00' %}selected{% endif %}>12:00 PM</option>
+                                <option value="14:00" {% if consulta.fecha_consulta|date:'H:i' == '14:00' %}selected{% endif %}>02:00 PM</option>
+                                <option value="14:30" {% if consulta.fecha_consulta|date:'H:i' == '14:30' %}selected{% endif %}>02:30 PM</option>
+                                <option value="15:00" {% if consulta.fecha_consulta|date:'H:i' == '15:00' %}selected{% endif %}>03:00 PM</option>
+                                <option value="15:30" {% if consulta.fecha_consulta|date:'H:i' == '15:30' %}selected{% endif %}>03:30 PM</option>
+                                <option value="16:00" {% if consulta.fecha_consulta|date:'H:i' == '16:00' %}selected{% endif %}>04:00 PM</option>
+                                <option value="16:30" {% if consulta.fecha_consulta|date:'H:i' == '16:30' %}selected{% endif %}>04:30 PM</option>
+                                <option value="17:00" {% if consulta.fecha_consulta|date:'H:i' == '17:00' %}selected{% endif %}>05:00 PM</option>
+                                <option value="17:30" {% if consulta.fecha_consulta|date:'H:i' == '17:30' %}selected{% endif %}>05:30 PM</option>
+                                <option value="18:00" {% if consulta.fecha_consulta|date:'H:i' == '18:00' %}selected{% endif %}>06:00 PM</option>
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_consulta" class="form-label required">Tipo de Consulta</label>
+                            <select class="form-select" id="tipo_consulta" name="tipo_consulta" required>
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="general" {% if consulta.tipo_consulta == 'general' %}selected{% endif %}>Consulta General</option>
+                                <option value="seguimiento" {% if consulta.tipo_consulta == 'seguimiento' %}selected{% endif %}>Seguimiento</option>
+                                <option value="urgencia" {% if consulta.tipo_consulta == 'urgencia' %}selected{% endif %}>Urgencia</option>
+                                <option value="control" {% if consulta.tipo_consulta == 'control' %}selected{% endif %}>Control</option>
+                                <option value="primera_vez" {% if consulta.tipo_consulta == 'primera_vez' %}selected{% endif %}>Primera Vez</option>
+                            </select>
+                            <div class="form-feedback"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="duracion" class="form-label">Duración Estimada</label>
+                            <select class="form-select" id="duracion" name="duracion">
+                                <option value="30">30 minutos</option>
+                                <option value="45">45 minutos</option>
+                                <option value="60" selected>60 minutos</option>
+                                <option value="90">90 minutos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label required">Motivo de la Consulta</label>
+                        <textarea class="form-control" id="motivo" name="motivo" rows="3" required>{{ consulta.motivo }}</textarea>
+                        <div class="form-feedback"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motivo del Cambio -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Motivo del Cambio
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">¿Por qué se modifica la consulta? <small class="text-muted">(Opcional)</small></label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="2"
+                                  placeholder="Ej: Paciente solicitó cambio de horario, Conflicto de agenda, etc."></textarea>
+                        <small class="form-text text-muted">
+                            Esta información se agregará al historial de la consulta.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verificación de Disponibilidad -->
+            <div class="card availability-card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Verificación de Disponibilidad
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="availability-check" class="availability-status">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        Selecciona fecha, hora y doctor para verificar disponibilidad
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="card navigation-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'detalle_paciente' consulta.patient.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar Edición
+                        </a>
+                        
+                        <div class="action-buttons">
+                            <button type="button" class="btn btn-outline-primary" onclick="verVistaPrevia()">
+                                <i class="fas fa-eye me-2"></i>Vista Previa
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Vista Previa -->
+<div class="modal fade" id="vistaPreviaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Vista Previa de Cambios
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-danger">Datos Actuales</h6>
+                        <div id="datosActuales"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">Nuevos Datos</h6>
+                        <div id="datosNuevos"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar disponibilidad al cambiar campos
+    ['fecha', 'hora', 'doctor_id'].forEach(id => {
+        document.getElementById(id).addEventListener('change', checkAvailability);
+    });
+});
+
+function checkAvailability() {
+    const fecha = document.getElementById('fecha').value;
+    const hora = document.getElementById('hora').value;
+    const doctorId = document.getElementById('doctor_id').value;
+    
+    if (fecha && hora && doctorId) {
+        const statusDiv = document.getElementById('availability-check');
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verificando disponibilidad...';
+        
+        // Simulación de verificación (implementar AJAX real después)
+        setTimeout(() => {
+            statusDiv.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Horario disponible';
+            statusDiv.className = 'availability-status available';
+        }, 1000);
+    }
+}
+
+function verVistaPrevia() {
+    // Obtener valores actuales
+    const datosActuales = {
+        paciente: '{{ consulta.patient.nombre_completo }}',
+        doctor: '{{ consulta.doctor.nombre_completo }}',
+        fecha: '{{ consulta.fecha_consulta|date:"d/m/Y H:i" }}',
+        tipo: '{{ consulta.get_tipo_consulta_display }}',
+        motivo: '{{ consulta.motivo|truncatewords:20 }}'
+    };
+    
+    // Obtener nuevos valores del formulario
+    const pacienteSelect = document.getElementById('patient_id');
+    const doctorSelect = document.getElementById('doctor_id');
+    const tipoSelect = document.getElementById('tipo_consulta');
+    
+    const datosNuevos = {
+        paciente: pacienteSelect.options[pacienteSelect.selectedIndex].text,
+        doctor: doctorSelect.options[doctorSelect.selectedIndex].text,
+        fecha: `${document.getElementById('fecha').value} ${document.getElementById('hora').value}`,
+        tipo: tipoSelect.options[tipoSelect.selectedIndex].text,
+        motivo: document.getElementById('motivo').value
+    };
+    
+    // Generar HTML para comparación
+    let htmlActuales = '<ul class="list-unstyled">';
+    let htmlNuevos = '<ul class="list-unstyled">';
+    
+    for (let key in datosActuales) {
+        const label = key.charAt(0).toUpperCase() + key.slice(1);
+        htmlActuales += `<li><strong>${label}:</strong> ${datosActuales[key]}</li>`;
+        htmlNuevos += `<li><strong>${label}:</strong> ${datosNuevos[key]}</li>`;
+    }
+    
+    htmlActuales += '</ul>';
+    htmlNuevos += '</ul>';
+    
+    document.getElementById('datosActuales').innerHTML = htmlActuales;
+    document.getElementById('datosNuevos').innerHTML = htmlNuevos;
+    
+    const modal = new bootstrap.Modal(document.getElementById('vistaPreviaModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

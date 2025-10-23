@@ -1,0 +1,439 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block page_title %}Consulta - {{ consulta.patient.nombre_completo }}{% endblock %}
+{% block page_subtitle %}{{ consulta.fecha_consulta|date:"d/M/Y H:i" }} - {{ consulta.get_tipo_consulta_display }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/consultas.css' %}">
+<link rel="stylesheet" href="{% static 'mi_app/css/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Información del Paciente -->
+    <div class="col-lg-4 mb-4">
+        <div class="card patient-summary-card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Información del Paciente
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="patient-avatar-section text-center mb-3">
+                    <div class="patient-avatar-large">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h5 class="mt-2">{{ consulta.patient.nombre_completo }}</h5>
+                    <span class="badge bg-primary">{{ consulta.patient.edad }} años</span>
+                </div>
+                
+                <div class="patient-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Teléfono:</span>
+                        <span class="detail-value">{{ consulta.patient.telefono_principal }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Tipo de sangre:</span>
+                        <span class="detail-value">{{ consulta.patient.tipo_sangre|default:"No especificado" }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Alergias:</span>
+                        <span class="detail-value">{{ consulta.patient.alergias|default:"Ninguna registrada"|truncatewords:3 }}</span>
+                    </div>
+                    {% if consulta.patient.peso and consulta.patient.altura %}
+                    <div class="detail-row">
+                        <span class="detail-label">Peso/Altura:</span>
+                        <span class="detail-value">{{ consulta.patient.peso }}kg / {{ consulta.patient.altura }}cm</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">IMC:</span>
+                        <span class="detail-value">{{ consulta.patient.imc }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-3">
+                    <a href="{% url 'detalle_paciente' consulta.patient.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-external-link-alt me-2"></i>Ver Expediente Completo
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info de la Consulta -->
+        <div class="card mt-3 consultation-info-card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-calendar me-2"></i>Información de la Consulta
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="detail-row">
+                    <span class="detail-label">Doctor:</span>
+                    <span class="detail-value">{{ consulta.doctor.nombre_completo }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Fecha:</span>
+                    <span class="detail-value">{{ consulta.fecha_consulta|date:"d/m/Y" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Hora:</span>
+                    <span class="detail-value">{{ consulta.fecha_consulta|date:"H:i" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Tipo:</span>
+                    <span class="detail-value">{{ consulta.get_tipo_consulta_display }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Estado:</span>
+                    <span class="badge status-{{ consulta.estado }}">{{ consulta.get_estado_display }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Motivo:</span>
+                    <span class="detail-value">{{ consulta.motivo }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulario de Consulta Médica -->
+    <div class="col-lg-8">
+        <form method="post" class="consultation-form">
+            {% csrf_token %}
+            
+            <!-- Signos Vitales -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-heartbeat me-2"></i>Signos Vitales
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="presion_arterial" class="form-label">Presión Arterial</label>
+                            <input type="text" class="form-control" id="presion_arterial" name="presion_arterial" 
+                                   placeholder="120/80" value="{{ consulta.presion_arterial }}">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="frecuencia_cardiaca" class="form-label">Frecuencia Cardíaca</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="frecuencia_cardiaca" name="frecuencia_cardiaca" 
+                                       placeholder="72" value="{{ consulta.frecuencia_cardiaca }}">
+                                <span class="input-group-text">bpm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="temperatura" class="form-label">Temperatura</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="temperatura" name="temperatura" 
+                                       step="0.1" placeholder="36.5" value="{{ consulta.temperatura }}">
+                                <span class="input-group-text">°C</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="peso_consulta" class="form-label">Peso Actual</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="peso_consulta" name="peso_consulta" 
+                                       step="0.1" placeholder="70.5" value="{{ consulta.peso_consulta }}">
+                                <span class="input-group-text">kg</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Síntomas -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comment-medical me-2"></i>Síntomas y Motivo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="sintomas" class="form-label">Síntomas Reportados</label>
+                        <textarea class="form-control" id="sintomas" name="sintomas" rows="4"
+                                  placeholder="Describe los síntomas que reporta el paciente...">{{ consulta.sintomas }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exploración Física -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Exploración Física
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="exploracion_fisica" class="form-label">Hallazgos de la Exploración</label>
+                        <textarea class="form-control" id="exploracion_fisica" name="exploracion_fisica" rows="4"
+                                  placeholder="Registra los hallazgos de la exploración física...">{{ consulta.exploracion_fisica }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Diagnóstico -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-diagnoses me-2"></i>Diagnóstico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="diagnostico" class="form-label">Diagnóstico Principal</label>
+                        <textarea class="form-control" id="diagnostico" name="diagnostico" rows="3"
+                                  placeholder="Diagnóstico principal y diagnósticos diferenciales...">{{ consulta.diagnostico }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tratamiento -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-prescription-bottle-alt me-2"></i>Plan de Tratamiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="tratamiento" class="form-label">Tratamiento y Medicamentos</label>
+                        <textarea class="form-control" id="tratamiento" name="tratamiento" rows="4"
+                                  placeholder="Medicamentos prescritos, dosis, frecuencia y duración...">{{ consulta.tratamiento }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Observaciones y Seguimiento -->
+            <div class="card form-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Observaciones y Seguimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones Adicionales</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3"
+                                  placeholder="Notas adicionales, recomendaciones, etc...">{{ consulta.observaciones }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="proxima_cita" class="form-label">Próxima Cita (opcional)</label>
+                            <input type="date" class="form-control" id="proxima_cita" name="proxima_cita" 
+                                   value="{{ consulta.proxima_cita|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Acciones de Seguimiento</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="solicitar_estudios" name="solicitar_estudios">
+                                <label class="form-check-label" for="solicitar_estudios">
+                                    Solicitar estudios de laboratorio
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="referir_especialista" name="referir_especialista">
+                                <label class="form-check-label" for="referir_especialista">
+                                    Referir a especialista
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div class="card navigation-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'agenda_consultas' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a Agenda
+                        </a>
+                        
+                        <div class="action-buttons">
+                            <button type="button" class="btn btn-outline-primary" onclick="guardarBorrador()">
+                                <i class="fas fa-save me-2"></i>Guardar Borrador
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="generarReceta()">
+                                <i class="fas fa-prescription me-2"></i>Generar Receta
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check me-2"></i>Completar Consulta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="completedModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>Consulta Completada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="success-icon mb-3">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h6>Consulta registrada exitosamente</h6>
+                <p class="text-muted">Los datos han sido guardados en el expediente del paciente</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="{% url 'agenda_consultas' %}" class="btn btn-primary">
+                    <i class="fas fa-calendar me-2"></i>Ver Agenda
+                </a>
+                <a href="{% url 'detalle_paciente' consulta.patient.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-user me-2"></i>Ver Expediente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-save cada 2 minutos
+    setInterval(function() {
+        guardarBorrador(true);
+    }, 120000);
+    
+    // Envío del formulario
+    const form = document.querySelector('.consultation-form');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validar que al menos tenga diagnóstico para completar
+        const diagnostico = document.getElementById('diagnostico').value.trim();
+        
+        if (!diagnostico) {
+            if (confirm('No has agregado un diagnóstico. ¿Deseas guardar como borrador y continuar después?')) {
+                // Guardar sin completar
+                this.submit();
+            }
+        } else {
+            // Mostrar confirmación antes de completar
+            if (confirm('¿Deseas completar esta consulta? Se marcará como finalizada y se guardará en el expediente del paciente.')) {
+                this.submit();
+            }
+        }
+    });
+    
+    // Calcular IMC si se ingresa peso
+    const pesoInput = document.getElementById('peso_consulta');
+    pesoInput.addEventListener('input', function() {
+        const peso = parseFloat(this.value);
+        const altura = {{ consulta.patient.altura|default:0 }};
+        
+        if (peso && altura) {
+            const imc = peso / Math.pow(altura / 100, 2);
+            console.log(`IMC calculado: ${imc.toFixed(1)}`);
+        }
+    });
+});
+
+function guardarBorrador(silent = false) {
+    const formData = new FormData(document.querySelector('.consultation-form'));
+    
+    if (!silent) {
+        // Enviar formulario
+        document.querySelector('.consultation-form').submit();
+        showNotification('Guardando borrador...', 'info');
+    }
+}
+
+function generarReceta() {
+    const tratamiento = document.getElementById('tratamiento').value;
+    
+    if (!tratamiento.trim()) {
+        alert('Debes agregar un tratamiento antes de generar la receta');
+        return;
+    }
+    
+    console.log('Generando receta médica...');
+    showNotification('Funcionalidad de receta próximamente', 'info');
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check' : 'info'}-circle me-2"></i>
+        ${message}
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+
+// Mostrar modal si la consulta se completó - ACTUALIZAR ESTA PARTE
+{% if messages %}
+    {% for message in messages %}
+        {% if 'completada' in message.message|lower %}
+            // Esperar un momento para que el DOM esté listo
+            setTimeout(function() {
+                const modalElement = document.getElementById('completedModal');
+                if (modalElement) {
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                }
+            }, 300);
+        {% endif %}
+    {% endfor %}
+{% endif %}
+</script>
+
+<!-- Modal de Confirmación - AGREGAR/ACTUALIZAR -->
+<div class="modal fade" id="completedModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>Consulta Completada
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="success-icon mb-3">
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="mb-3">¡Consulta Completada Exitosamente!</h5>
+                <p class="text-muted">Los datos médicos han sido guardados en el expediente del paciente</p>
+                <div class="patient-info mt-3 p-3 bg-light rounded">
+                    <strong>{{ consulta.patient.nombre_completo }}</strong><br>
+                    <small class="text-muted">{{ consulta.fecha_consulta|date:"d/m/Y H:i" }}</small>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="{% url 'agenda_consultas' %}" class="btn btn-primary">
+                    <i class="fas fa-calendar me-2"></i>Ver Agenda
+                </a>
+                <a href="{% url 'detalle_paciente' consulta.patient.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-user me-2"></i>Ver Expediente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

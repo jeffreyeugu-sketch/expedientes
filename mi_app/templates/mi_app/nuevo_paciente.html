@@ -1,0 +1,759 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block nav_nuevo_paciente %}active{% endblock %}
+
+{% block page_title %}Nuevo Paciente{% endblock %}
+{% block page_subtitle %}Registro completo de paciente{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+        <!-- Progress Steps -->
+        <div class="card steps-card mb-4">
+            <div class="card-body p-4">
+                <div class="steps-container">
+                    <div class="step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Datos Personales</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Información Médica</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Contacto & Emergencia</div>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Revisión</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario Principal -->
+        <form id="patientForm" method="post">
+            {% csrf_token %}
+            
+            <!-- Paso 1: Datos Personales -->
+            <div class="form-step active" id="step1">
+                <div class="card form-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user me-2"></i>Datos Personales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombres" class="form-label required">Nombres</label>
+                                <input type="text" class="form-control" id="nombres" name="nombres" required>
+                                <div class="form-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="apellidos" class="form-label required">Apellidos</label>
+                                <input type="text" class="form-control" id="apellidos" name="apellidos" required>
+                                <div class="form-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fecha_nacimiento" class="form-label required">Fecha de Nacimiento</label>
+                                <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                                <div class="form-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edad" class="form-label">Edad</label>
+                                <input type="number" class="form-control" id="edad" name="edad" readonly>
+                                <small class="form-text text-muted">Se calcula automáticamente</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="genero" class="form-label required">Género</label>
+                                <select class="form-select" id="genero" name="genero" required>
+                                    <option value="">Seleccionar género</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="femenino">Femenino</option>
+                                    <option value="otro">Otro</option>
+                                    <option value="no_especifica">Prefiero no especificar</option>
+                                </select>
+                                <div class="form-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="estado_civil" class="form-label">Estado Civil</label>
+                                <select class="form-select" id="estado_civil" name="estado_civil">
+                                    <option value="">Seleccionar estado civil</option>
+                                    <option value="soltero">Soltero/a</option>
+                                    <option value="casado">Casado/a</option>
+                                    <option value="divorciado">Divorciado/a</option>
+                                    <option value="viudo">Viudo/a</option>
+                                    <option value="union_libre">Unión libre</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ocupacion" class="form-label">Ocupación</label>
+                                <input type="text" class="form-control" id="ocupacion" name="ocupacion" 
+                                       placeholder="Ej: Ingeniero, Estudiante, Jubilado">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="documento_id" class="form-label required">Documento de Identidad</label>
+                                <input type="text" class="form-control" id="documento_id" name="documento_id" required
+                                       placeholder="CURP, RFC, o número de identificación">
+                                <div class="form-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="direccion" class="form-label">Dirección Completa</label>
+                            <textarea class="form-control" id="direccion" name="direccion" rows="2"
+                                      placeholder="Calle, número, colonia, ciudad, estado, CP"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 2: Información Médica -->
+            <div class="form-step" id="step2">
+                <div class="card form-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-heartbeat me-2"></i>Información Médica
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_sangre" class="form-label">Tipo de Sangre</label>
+                                <select class="form-select" id="tipo_sangre" name="tipo_sangre">
+                                    <option value="">Seleccionar tipo de sangre</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="desconocido">Desconocido</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="peso" class="form-label">Peso (kg)</label>
+                                <input type="number" class="form-control" id="peso" name="peso" 
+                                       step="0.1" min="0" max="300" placeholder="70.5">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="altura" class="form-label">Altura (cm)</label>
+                                <input type="number" class="form-control" id="altura" name="altura" 
+                                       min="0" max="250" placeholder="175">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="imc" class="form-label">IMC</label>
+                                <input type="text" class="form-control" id="imc" name="imc" readonly>
+                                <small class="form-text text-muted">Se calcula automáticamente</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="alergias" class="form-label">Alergias Conocidas</label>
+                            <textarea class="form-control" id="alergias" name="alergias" rows="3"
+                                      placeholder="Medicamentos, alimentos, sustancias, etc. Escribir 'Ninguna' si no tiene alergias conocidas"></textarea>
+                            <small class="form-text text-muted">Especifica medicamentos, alimentos, o cualquier sustancia que cause reacciones alérgicas</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="medicamentos_actuales" class="form-label">Medicamentos Actuales</label>
+                            <textarea class="form-control" id="medicamentos_actuales" name="medicamentos_actuales" rows="3"
+                                      placeholder="Lista de medicamentos que toma actualmente, dosis y frecuencia"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="enfermedades_cronicas" class="form-label">Enfermedades Crónicas</label>
+                            <textarea class="form-control" id="enfermedades_cronicas" name="enfermedades_cronicas" rows="3"
+                                      placeholder="Diabetes, hipertensión, asma, etc."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="antecedentes_familiares" class="form-label">Antecedentes Familiares</label>
+                            <textarea class="form-control" id="antecedentes_familiares" name="antecedentes_familiares" rows="3"
+                                      placeholder="Enfermedades hereditarias o condiciones médicas relevantes en la familia"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">¿Fuma?</label>
+                                <div class="form-check-group">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="fuma" id="fuma_no" value="no">
+                                        <label class="form-check-label" for="fuma_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="fuma" id="fuma_si" value="si">
+                                        <label class="form-check-label" for="fuma_si">Sí</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="fuma" id="fuma_ocasional" value="ocasional">
+                                        <label class="form-check-label" for="fuma_ocasional">Ocasionalmente</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">¿Consume alcohol?</label>
+                                <div class="form-check-group">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="alcohol" id="alcohol_no" value="no">
+                                        <label class="form-check-label" for="alcohol_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="alcohol" id="alcohol_si" value="si">
+                                        <label class="form-check-label" for="alcohol_si">Sí</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="alcohol" id="alcohol_ocasional" value="ocasional">
+                                        <label class="form-check-label" for="alcohol_ocasional">Ocasionalmente</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 3: Contacto & Emergencia -->
+            <div class="form-step" id="step3">
+                <div class="card form-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-phone me-2"></i>Información de Contacto
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono_principal" class="form-label required">Teléfono Principal</label>
+                                <input type="tel" class="form-control" id="telefono_principal" name="telefono_principal" required
+                                       placeholder="(555) 123-4567">
+                                <div class="form-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono_alternativo" class="form-label">Teléfono Alternativo</label>
+                                <input type="tel" class="form-control" id="telefono_alternativo" name="telefono_alternativo"
+                                       placeholder="(555) 987-6543">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Correo Electrónico</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       placeholder="paciente@email.com">
+                                <div class="form-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email_alternativo" class="form-label">Correo Alternativo</label>
+                                <input type="email" class="form-control" id="email_alternativo" name="email_alternativo"
+                                       placeholder="familiar@email.com">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Contacto de Emergencia
+                        </h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="emergencia_nombre" class="form-label required">Nombre Completo</label>
+                                <input type="text" class="form-control" id="emergencia_nombre" name="emergencia_nombre" required
+                                       placeholder="Nombre del contacto de emergencia">
+                                <div class="form-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergencia_parentesco" class="form-label required">Parentesco</label>
+                                <select class="form-select" id="emergencia_parentesco" name="emergencia_parentesco" required>
+                                    <option value="">Seleccionar parentesco</option>
+                                    <option value="padre">Padre</option>
+                                    <option value="madre">Madre</option>
+                                    <option value="esposo">Esposo</option>
+                                    <option value="esposa">Esposa</option>
+                                    <option value="hijo">Hijo</option>
+                                    <option value="hija">Hija</option>
+                                    <option value="hermano">Hermano</option>
+                                    <option value="hermana">Hermana</option>
+                                    <option value="abuelo">Abuelo</option>
+                                    <option value="abuela">Abuela</option>
+                                    <option value="tio">Tío</option>
+                                    <option value="tia">Tía</option>
+                                    <option value="primo">Primo</option>
+                                    <option value="prima">Prima</option>
+                                    <option value="amigo">Amigo</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                                <div class="form-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="emergencia_telefono" class="form-label required">Teléfono</label>
+                                <input type="tel" class="form-control" id="emergencia_telefono" name="emergencia_telefono" required
+                                       placeholder="(555) 123-4567">
+                                <div class="form-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergencia_telefono2" class="form-label">Teléfono Alternativo</label>
+                                <input type="tel" class="form-control" id="emergencia_telefono2" name="emergencia_telefono2"
+                                       placeholder="(555) 987-6543">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h6 class="text-info mb-3">
+                            <i class="fas fa-shield-alt me-2"></i>Información del Seguro (Opcional)
+                        </h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="seguro_medico" class="form-label">Aseguradora</label>
+                                <input type="text" class="form-control" id="seguro_medico" name="seguro_medico"
+                                       placeholder="Nombre de la aseguradora">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="numero_poliza" class="form-label">Número de Póliza</label>
+                                <input type="text" class="form-control" id="numero_poliza" name="numero_poliza"
+                                       placeholder="Número de póliza o afiliación">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 4: Revisión -->
+            <div class="form-step" id="step4">
+                <div class="card form-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-check-circle me-2"></i>Revisión de Datos
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="review-section">
+                            <h6 class="review-title">Datos Personales</h6>
+                            <div class="review-content" id="review-personal"></div>
+                        </div>
+                        
+                        <div class="review-section">
+                            <h6 class="review-title">Información Médica</h6>
+                            <div class="review-content" id="review-medical"></div>
+                        </div>
+                        
+                        <div class="review-section">
+                            <h6 class="review-title">Información de Contacto</h6>
+                            <div class="review-content" id="review-contact"></div>
+                        </div>
+
+                        <div class="consent-section mt-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="consent_data" name="consent_data" required>
+                                <label class="form-check-label" for="consent_data">
+                                    Acepto el tratamiento de mis datos personales conforme a la Ley de Protección de Datos
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="consent_medical" name="consent_medical" required>
+                                <label class="form-check-label" for="consent_medical">
+                                    Autorizo el uso de mi información médica para fines de tratamiento y seguimiento
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="consent_communication" name="consent_communication">
+                                <label class="form-check-label" for="consent_communication">
+                                    Acepto recibir comunicaciones relacionadas con mi atención médica
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Navegación -->
+            <div class="card navigation-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="button" id="prevBtn" class="btn btn-outline-secondary" onclick="changeStep(-1)" style="display: none;">
+                            <i class="fas fa-arrow-left me-2"></i>Anterior
+                        </button>
+                        
+                        <div class="step-indicator">
+                            Paso <span id="currentStepNum">1</span> de 4
+                        </div>
+                        
+                        <div>
+                            <button type="button" id="nextBtn" class="btn btn-primary" onclick="changeStep(1)">
+                                Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                            <button type="submit" id="submitBtn" class="btn btn-success" style="display: none;">
+                                <i class="fas fa-save me-2"></i>Registrar Paciente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>Paciente Registrado Exitosamente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="success-icon mb-3">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <h6 id="patientNameConfirm">Juan Pérez González</h6>
+                <p class="text-muted">Ha sido registrado correctamente en el sistema</p>
+                <p><strong>ID del Paciente: </strong><span id="patientIdConfirm">#0001</span></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary" onclick="viewNewPatient()">
+                    <i class="fas fa-eye me-2"></i>Ver Expediente
+                </button>
+                <button type="button" class="btn btn-success" onclick="newConsultation()">
+                    <i class="fas fa-stethoscope me-2"></i>Nueva Consulta
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="newPatient()">
+                    <i class="fas fa-user-plus me-2"></i>Otro Paciente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+const totalSteps = 4;
+
+// Validación y navegación entre pasos
+function changeStep(direction) {
+    if (direction === 1) {
+        if (!validateStep(currentStep)) {
+            return;
+        }
+    }
+    
+    const nextStep = currentStep + direction;
+    
+    if (nextStep < 1 || nextStep > totalSteps) {
+        return;
+    }
+    
+    // Ocultar paso actual
+    document.getElementById('review-personal').innerHTML = `
+        <div class="review-item"><strong>Nombre completo:</strong> ${nombres} ${apellidos}</div>
+        <div class="review-item"><strong>Fecha de nacimiento:</strong> ${fecha_nacimiento}</div>
+        <div class="review-item"><strong>Edad:</strong> ${edad} años</div>
+        <div class="review-item"><strong>Género:</strong> ${genero}</div>
+        <div class="review-item"><strong>Documento ID:</strong> ${documento_id}</div>
+    `;
+}
+
+function updateMedicalReview() {
+    const tipo_sangre = document.getElementById('tipo_sangre').value || 'No especificado';
+    const peso = document.getElementById('peso').value;
+    const altura = document.getElementById('altura').value;
+    const imc = document.getElementById('imc').value;
+    const alergias = document.getElementById('alergias').value || 'Ninguna especificada';
+    
+    document.getElementById('review-medical').innerHTML = `
+        <div class="review-item"><strong>Tipo de sangre:</strong> ${tipo_sangre}</div>
+        <div class="review-item"><strong>Peso:</strong> ${peso} kg</div>
+        <div class="review-item"><strong>Altura:</strong> ${altura} cm</div>
+        <div class="review-item"><strong>IMC:</strong> ${imc}</div>
+        <div class="review-item"><strong>Alergias:</strong> ${alergias}</div>
+    `;
+}
+
+function updateContactReview() {
+    const telefono_principal = document.getElementById('telefono_principal').value;
+    const email = document.getElementById('email').value || 'No especificado';
+    const emergencia_nombre = document.getElementById('emergencia_nombre').value;
+    const emergencia_parentesco = document.getElementById('emergencia_parentesco').value;
+    const emergencia_telefono = document.getElementById('emergencia_telefono').value;
+    
+    document.getElementById('review-contact').innerHTML = `
+        <div class="review-item"><strong>Teléfono principal:</strong> ${telefono_principal}</div>
+        <div class="review-item"><strong>Email:</strong> ${email}</div>
+        <div class="review-item"><strong>Contacto de emergencia:</strong> ${emergencia_nombre} (${emergencia_parentesco})</div>
+        <div class="review-item"><strong>Teléfono de emergencia:</strong> ${emergencia_telefono}</div>
+    `;
+}
+
+// Envío del formulario
+function submitForm(event) {
+    event.preventDefault();
+    
+    if (!validateStep(4)) {
+        return;
+    }
+    
+    // Simular envío
+    const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Registrando...';
+    
+    setTimeout(() => {
+        showSuccessModal();
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }, 2000);
+}
+
+function showSuccessModal() {
+    const nombres = document.getElementById('nombres').value;
+    const apellidos = document.getElementById('apellidos').value;
+    const patientName = `${nombres} ${apellidos}`;
+    
+    document.getElementById('patientNameConfirm').textContent = patientName;
+    document.getElementById('patientIdConfirm').textContent = '#' + String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+// Funciones del modal de confirmación
+function viewNewPatient() {
+    window.location.href = '/pacientes/1/';
+}
+
+function newConsultation() {
+    window.location.href = '/consultas/nueva/';
+}
+
+function newPatient() {
+    window.location.reload();
+}
+
+// Formateo automático de campos
+function formatPhone(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length >= 10) {
+        value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+    }
+    input.value = value;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación en tiempo real
+    const allInputs = document.querySelectorAll('input, select, textarea');
+    allInputs.forEach(input => {
+        input.addEventListener('blur', () => validateField(input));
+        input.addEventListener('input', () => {
+            if (input.classList.contains('is-invalid')) {
+                validateField(input);
+            }
+        });
+    });
+    
+    // Cálculos automáticos
+    document.getElementById('fecha_nacimiento').addEventListener('change', calculateAge);
+    document.getElementById('peso').addEventListener('input', calculateIMC);
+    document.getElementById('altura').addEventListener('input', calculateIMC);
+    
+    // Formateo de teléfonos
+    const phoneInputs = document.querySelectorAll('input[type="tel"]');
+    phoneInputs.forEach(input => {
+        input.addEventListener('input', () => formatPhone(input));
+    });
+    
+    // Envío del formulario
+    document.getElementById('patientForm').addEventListener('submit', submitForm);
+    
+    console.log('Formulario de nuevo paciente cargado');
+});
+</script>
+{% endblock %}getElementById(`step${currentStep}`).classList.remove('active');
+    document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+    
+    // Mostrar siguiente paso
+    currentStep = nextStep;
+    document.getElementById(`step${currentStep}`).classList.add('active');
+    document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+    
+    // Actualizar botones
+    updateNavigationButtons();
+    
+    // Actualizar revisión en el paso 4
+    if (currentStep === 4) {
+        updateReviewSection();
+    }
+    
+    // Scroll al inicio
+    window.scrollTo(0, 0);
+}
+
+function updateNavigationButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const stepNum = document.getElementById('currentStepNum');
+    
+    prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+    nextBtn.style.display = currentStep === totalSteps ? 'none' : 'block';
+    submitBtn.style.display = currentStep === totalSteps ? 'block' : 'none';
+    stepNum.textContent = currentStep;
+}
+
+// Validación de cada paso
+function validateStep(step) {
+    let isValid = true;
+    const stepElement = document.getElementById(`step${step}`);
+    const requiredFields = stepElement.querySelectorAll('[required]');
+    
+    requiredFields.forEach(field => {
+        if (!validateField(field)) {
+            isValid = false;
+        }
+    });
+    
+    return isValid;
+}
+
+function validateField(field) {
+    const value = field.value.trim();
+    const feedback = field.parentNode.querySelector('.form-feedback');
+    
+    // Limpiar estado anterior
+    field.classList.remove('is-valid', 'is-invalid');
+    
+    if (field.hasAttribute('required') && !value) {
+        setFieldInvalid(field, feedback, 'Este campo es obligatorio');
+        return false;
+    }
+    
+    // Validaciones específicas
+    switch (field.type) {
+        case 'email':
+            if (value && !isValidEmail(value)) {
+                setFieldInvalid(field, feedback, 'Ingresa un email válido');
+                return false;
+            }
+            break;
+        case 'tel':
+            if (value && !isValidPhone(value)) {
+                setFieldInvalid(field, feedback, 'Ingresa un teléfono válido');
+                return false;
+            }
+            break;
+        case 'date':
+            if (value && !isValidDate(value)) {
+                setFieldInvalid(field, feedback, 'Ingresa una fecha válida');
+                return false;
+            }
+            break;
+    }
+    
+    setFieldValid(field, feedback);
+    return true;
+}
+
+function setFieldInvalid(field, feedback, message) {
+    field.classList.add('is-invalid');
+    if (feedback) {
+        feedback.className = 'form-feedback invalid-feedback';
+        feedback.textContent = message;
+    }
+}
+
+function setFieldValid(field, feedback) {
+    field.classList.add('is-valid');
+    if (feedback) {
+        feedback.className = 'form-feedback valid-feedback';
+        feedback.textContent = '✓';
+    }
+}
+
+// Funciones de validación
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone) {
+    return /^[\d\s\-\(\)]+$/.test(phone) && phone.replace(/\D/g, '').length >= 10;
+}
+
+function isValidDate(date) {
+    const inputDate = new Date(date);
+    const today = new Date();
+    return inputDate <= today;
+}
+
+// Cálculos automáticos
+function calculateAge() {
+    const birthDate = document.getElementById('fecha_nacimiento').value;
+    if (!birthDate) return;
+    
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    
+    document.getElementById('edad').value = age;
+}
+
+function calculateIMC() {
+    const peso = parseFloat(document.getElementById('peso').value);
+    const altura = parseFloat(document.getElementById('altura').value);
+    
+    if (!peso || !altura) return;
+    
+    const imc = peso / Math.pow(altura / 100, 2);
+    document.getElementById('imc').value = imc.toFixed(1);
+}
+
+// Actualizar sección de revisión
+function updateReviewSection() {
+    updatePersonalReview();
+    updateMedicalReview();
+    updateContactReview();
+}
+
+function updatePersonalReview() {
+    const nombres = document.getElementById('nombres').value;
+    const apellidos = document.getElementById('apellidos').value;
+    const fecha_nacimiento = document.getElementById('fecha_nacimiento').value;
+    const edad = document.getElementById('edad').value;
+    const genero = document.getElementById('genero').value;
+    const documento_id = document.getElementById('documento_id').value;
+    
+    document.
