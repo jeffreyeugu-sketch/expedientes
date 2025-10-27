@@ -1,6 +1,5 @@
-/* CSS Específico para Sistema de Consultas */
+/* Consultas CSS - COLORES NEUTROS */
 
-/* Stats Cards para Agenda */
 .stats-card {
     background: white;
     border-radius: 15px;
@@ -20,15 +19,15 @@
 }
 
 .stats-total {
-    border-left-color: var(--primary-color);
+    border-left-color: #6c757d;
 }
 
 .stats-success {
-    border-left-color: var(--success-color);
+    border-left-color: #00a896;
 }
 
 .stats-warning {
-    border-left-color: var(--warning-color);
+    border-left-color: #ffd166;
 }
 
 .stats-card .stats-icon {
@@ -44,15 +43,15 @@
 }
 
 .stats-total .stats-icon {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
 }
 
 .stats-success .stats-icon {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, #00a896 0%, #028090 100%);
 }
 
 .stats-warning .stats-icon {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    background: linear-gradient(135deg, #ffd166 0%, #f4a261 100%);
 }
 
 .stats-content .stats-number {
@@ -81,13 +80,15 @@
     font-weight: 600;
     padding: 1rem;
     border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+    background: linear-gradient(135deg, #00a896 0%, #028090 100%);
+    box-shadow: 0 5px 15px rgba(0, 168, 150, 0.3);
     transition: all 0.3s ease;
+    border: none;
 }
 
 .action-card .btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
+    box-shadow: 0 8px 25px rgba(0, 168, 150, 0.4);
 }
 
 /* Agenda Card */
@@ -98,191 +99,83 @@
 }
 
 .agenda-card .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
     border-radius: 20px 20px 0 0;
     padding: 1.5rem;
     border-bottom: none;
 }
 
-/* Timeline de Consultas */
-.timeline {
-    padding: 1rem 0;
+/* Timeline */
+.consulta-timeline {
+    padding: 1rem;
 }
 
 .timeline-item {
     display: flex;
     align-items: flex-start;
-    gap: 1.5rem;
+    gap: 15px;
     padding: 1.5rem;
-    border-bottom: 1px solid #f1f1f1;
+    background: #f8f9fa;
+    border-radius: 15px;
+    margin-bottom: 15px;
     transition: all 0.3s ease;
-    position: relative;
+    border-left: 4px solid transparent;
 }
 
 .timeline-item:hover {
-    background-color: #f8f9fa;
+    background: #e9ecef;
     transform: translateX(5px);
 }
 
-.timeline-item:last-child {
-    border-bottom: none;
+.timeline-item.programada {
+    border-left-color: #6c757d;
 }
 
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: #dee2e6;
-    border-radius: 2px;
-    transition: all 0.3s ease;
+.timeline-item.completada {
+    border-left-color: #00a896;
 }
 
-.timeline-item[data-estado="programada"]::before {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+.timeline-item.cancelada {
+    border-left-color: #dc3545;
 }
 
-.timeline-item[data-estado="completada"]::before {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.timeline-item[data-estado="en_curso"]::before {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.timeline-time {
-    flex-shrink: 0;
-    width: 80px;
-    text-align: center;
-}
-
-.timeline-time .time {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    line-height: 1;
-}
-
-.timeline-time .duration {
-    font-size: 0.8rem;
-    color: #7f8c8d;
-    margin-top: 2px;
-}
-
-.timeline-content {
-    flex-grow: 1;
-}
-
-.consulta-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.patient-name {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin: 0;
-}
-
-.consulta-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    margin-bottom: 1rem;
-}
-
-.detail-item {
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-    color: #555;
-}
-
-.detail-item i {
-    color: var(--primary-color);
-    width: 16px;
-    text-align: center;
-}
-
-.consulta-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.consulta-actions .btn {
-    width: 35px;
-    height: 35px;
-    border-radius: 8px;
+.timeline-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    transition: all 0.3s ease;
-}
-
-.consulta-actions .btn:hover {
-    transform: scale(1.1);
-}
-
-/* Status Badges */
-.status-programada {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    font-size: 1.2rem;
     color: white;
+    flex-shrink: 0;
 }
 
-.status-completada {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    color: white;
-}
-
-.status-en_curso {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    color: white;
-}
-
-.status-cancelada {
+.timeline-icon.programada {
     background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    color: white;
 }
 
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: #6c757d;
+.timeline-icon.completada {
+    background: linear-gradient(135deg, #00a896 0%, #028090 100%);
 }
 
-.empty-state i {
-    font-size: 4rem;
-    color: #dee2e6;
-    margin-bottom: 1rem;
-}
-
-.empty-state h6 {
-    color: #495057;
-    margin-bottom: 0.5rem;
+.timeline-icon.cancelada {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
 }
 
 /* Próximas Consultas */
 .proximas-card {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     border: none;
-    border-radius: 15px;
+    border-radius: 20px;
 }
 
 .proximas-card .card-header {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
-    border-radius: 15px 15px 0 0;
-    padding: 1rem 1.5rem;
-    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    padding: 1.5rem;
 }
 
 .proximas-list {
@@ -365,114 +258,59 @@
     margin-bottom: 0.5rem;
 }
 
-/* Quick Actions Card */
-.quick-actions-card {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    border: none;
+
+/* Estado badges */
+.estado-badge {
+    padding: 6px 12px;
     border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
 }
 
-.quick-actions-card .card-header {
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-    color: #333;
-    border-radius: 15px 15px 0 0;
-    padding: 1rem 1.5rem;
-    border-bottom: none;
+.estado-programada {
+    background: #e9ecef;
+    color: #495057;
 }
 
-.quick-actions-card .btn {
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    text-align: left;
+.estado-completada {
+    background: #d1f2eb;
+    color: #0d6759;
 }
 
-.quick-actions-card .btn:hover {
-    transform: translateY(-2px);
+.estado-cancelada {
+    background: #f8d7da;
+    color: #721c24;
 }
 
-/* Formulario de Nueva Consulta */
-.info-card {
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-    border: none;
-    border-radius: 15px;
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6c757d;
 }
 
-.info-card .card-header {
-    background: rgba(255,255,255,0.9);
-    border-radius: 15px 15px 0 0;
-    border-bottom: 1px solid rgba(255,255,255,0.5);
+.empty-state i {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
 }
 
-.info-card .card-body {
-    background: rgba(255,255,255,0.9);
-    border-radius: 0 0 15px 15px;
-}
-
-.info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.empty-state h6 {
+    color: #495057;
     margin-bottom: 0.5rem;
 }
 
-.info-item label {
-    font-weight: 600;
-    color: #495057;
-    margin: 0;
-}
-
-.info-item span {
-    color: #2c3e50;
-    font-weight: 500;
-}
-
-/* Availability Card */
-.availability-card {
-    border: 2px solid #e9ecef;
-    border-radius: 15px;
-    transition: all 0.3s ease;
-}
-
-.availability-status {
-    padding: 1rem;
-    border-radius: 10px;
-    font-weight: 500;
-    background: #f8f9fa;
-    border: 2px solid #dee2e6;
-}
-
-.availability-status.available {
-    background: #d1edff;
-    border-color: #0dcaf0;
-    color: #0c63e4;
-}
-
-.availability-status.unavailable {
-    background: #f8d7da;
-    border-color: #f5c2c7;
-    color: #842029;
-}
-
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 992px) {
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
     .timeline-item {
+        padding: 1rem;
         flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .timeline-time {
-        width: 100%;
-        text-align: left;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .consulta-actions {
-        justify-content: center;
-        margin-top: 1rem;
     }
     
     .proxima-item {
@@ -480,190 +318,4 @@
         text-align: center;
         gap: 0.5rem;
     }
-}
-
-@media (max-width: 768px) {
-    .stats-card {
-        margin-bottom: 1rem;
-    }
-    
-    .timeline-item {
-        padding: 1rem;
-    }
-    
-    .proximas-card {
-        margin-top: 1rem;
-    }
-    
-    .patient-name {
-        font-size: 1rem;
-    }
-    
-    .detail-item {
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .agenda-card .card-header,
-    .proximas-card .card-header,
-    .quick-actions-card .card-header {
-        padding: 1rem;
-    }
-    
-    .timeline-item {
-        padding: 0.75rem;
-    }
-    
-    .stats-content .stats-number {
-        font-size: 1.5rem;
-    }
-    
-    .consulta-actions .btn {
-        width: 30px;
-        height: 30px;
-    }
-    
-    .empty-state {
-        padding: 2rem 1rem;
-    }
-    
-    .empty-state i {
-        font-size: 3rem;
-    }
-}
-/* Modal de consulta completada */
-#completedModal .modal-content {
-    border: none;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-
-#completedModal .modal-header {
-    border-radius: 20px 20px 0 0;
-    border-bottom: none;
-    padding: 1.5rem 2rem;
-}
-
-#completedModal .modal-body {
-    padding: 2rem;
-}
-
-#completedModal .success-icon {
-    animation: checkmark 0.8s ease-in-out;
-}
-
-@keyframes checkmark {
-    0% {
-        transform: scale(0);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.2);
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-#completedModal .patient-info {
-    border-left: 4px solid var(--success-color);
-}
-
-#completedModal .modal-footer {
-    border-top: 1px solid #dee2e6;
-    padding: 1.5rem 2rem;
-}
-/* ===========================================
-   ESTILOS PARA CONSULTAS CANCELADAS
-   Agregar al final de consultas.css
-   =========================================== */
-
-/* Estado Cancelada en Timeline */
-.consulta-timeline-item[data-estado="cancelada"]::before {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-}
-
-.consulta-timeline-item[data-estado="cancelada"] .consulta-timeline-marker {
-    border-color: #6c757d;
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    color: white;
-}
-
-.consulta-timeline-item[data-estado="cancelada"] .consulta-timeline-content {
-    border-left: 4px solid #6c757d;
-    opacity: 0.85;
-}
-
-/* Badge de estado cancelada */
-.status-cancelada {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    color: white;
-}
-
-/* Alert para consultas canceladas */
-.alert-danger {
-    background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
-    border-left: 4px solid #dc3545;
-    border-radius: 10px;
-}
-
-/* Modal de cancelación */
-#modalCancelarConsulta .modal-header {
-    border-radius: 20px 20px 0 0;
-}
-
-#modalCancelarConsulta .modal-content {
-    border: none;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-
-#modalCancelarConsulta textarea {
-    border-radius: 10px;
-    border: 2px solid #dee2e6;
-    transition: all 0.3s ease;
-}
-
-#modalCancelarConsulta textarea:focus {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-}
-
-/* Animación para consultas canceladas */
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0.7;
-    }
-}
-
-.consulta-timeline-item[data-estado="cancelada"] {
-    animation: fadeOut 0.5s ease forwards;
-}
-
-/* Efecto hover deshabilitado para canceladas */
-.consulta-timeline-item[data-estado="cancelada"]:hover {
-    transform: translateX(0);
-}
-
-.consulta-timeline-item[data-estado="cancelada"]:hover .consulta-timeline-content {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-}
-
-/* Quick stat para canceladas */
-.quick-stat-item:nth-child(4) .quick-stat-number {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* Botón de estado cancelada deshabilitado */
-.btn-outline-secondary[disabled] {
-    cursor: not-allowed;
-    opacity: 0.6;
 }

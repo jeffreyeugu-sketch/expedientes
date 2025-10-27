@@ -1,10 +1,10 @@
-/* CSS Específico para Formularios de Pacientes */
+/* Forms CSS - COLORES NEUTROS */
 
 /* Steps Progress Bar */
 .steps-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     border: none;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 10px 30px rgba(108, 117, 125, 0.3);
 }
 
 .steps-card .card-body {
@@ -64,7 +64,7 @@
 }
 
 .step.active .step-number {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
     transform: scale(1.1);
 }
@@ -75,7 +75,7 @@
 }
 
 .step.completed .step-number {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, #00a896 0%, #028090 100%);
     color: white;
 }
 
@@ -102,7 +102,7 @@
 }
 
 .form-card .card-header {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
     border-bottom: none;
     padding: 1.5rem 2rem;
@@ -112,7 +112,7 @@
     padding: 2rem;
 }
 
-/* Form Controls Mejorados */
+/* Form Controls */
 .form-label {
     font-weight: 600;
     color: #2c3e50;
@@ -138,14 +138,14 @@
 
 .form-control:focus,
 .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    border-color: #00a896;
+    box-shadow: 0 0 0 0.2rem rgba(0, 168, 150, 0.25);
     background: white;
 }
 
 .form-control.is-valid,
 .form-select.is-valid {
-    border-color: #28a745;
+    border-color: #00a896;
     background: white;
 }
 
@@ -163,7 +163,7 @@
 }
 
 .valid-feedback {
-    color: #28a745;
+    color: #00a896;
 }
 
 .invalid-feedback {
@@ -192,12 +192,12 @@
 }
 
 .form-check-input:checked {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    background-color: #00a896;
+    border-color: #00a896;
 }
 
 .form-check-input:focus {
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 168, 150, 0.25);
 }
 
 .form-check-label {
@@ -212,183 +212,85 @@
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    border-left: 4px solid var(--primary-color);
+    border-left: 4px solid #6c757d;
 }
 
 .review-title {
-    color: var(--primary-color);
+    color: #495057;
     font-weight: 600;
     margin-bottom: 1rem;
     font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-}
-
-.review-title::before {
-    content: '';
-    width: 20px;
-    height: 20px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    margin-right: 10px;
-    flex-shrink: 0;
-}
-
-.review-content {
-    display: grid;
-    gap: 0.5rem;
 }
 
 .review-item {
-    padding: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
     border-bottom: 1px solid #dee2e6;
-    font-size: 0.95rem;
 }
 
 .review-item:last-child {
     border-bottom: none;
 }
 
-.review-item strong {
-    color: #2c3e50;
-    display: inline-block;
-    min-width: 150px;
+/* Navigation Card */
+.navigation-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    border: none;
+}
+
+.navigation-card .card-body {
+    padding: 1.5rem 2rem;
+}
+
+.btn-prev {
+    background: #6c757d;
+    border: none;
+    color: white;
+}
+
+.btn-prev:hover {
+    background: #495057;
+}
+
+.btn-next {
+    background: linear-gradient(135deg, #00a896 0%, #028090 100%);
+    border: none;
+    color: white;
+}
+
+.btn-next:hover {
+    box-shadow: 0 5px 15px rgba(0, 168, 150, 0.4);
 }
 
 /* Consent Section */
 .consent-section {
-    background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
-    border-radius: 15px;
-    padding: 2rem;
-    border: 2px solid #fdcb6e;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
-.consent-section .form-check {
-    margin-bottom: 1rem;
-    padding: 10px;
-    background: rgba(255,255,255,0.8);
-    border-radius: 10px;
+.consent-section .form-check-input:checked {
+    background-color: #00a896;
+    border-color: #00a896;
 }
 
-.consent-section .form-check-label {
-    font-weight: 500;
-    color: #2d3436;
-    line-height: 1.4;
-}
-
-/* Navigation Card */
-.navigation-card {
-    border: none;
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(168, 237, 234, 0.3);
-    position: sticky;
-    bottom: 20px;
-    z-index: 100;
-}
-
-.navigation-card .card-body {
-    background: white;
-    border-radius: 0 0 20px 20px;
-    padding: 1.5rem 2rem;
-}
-
-.step-indicator {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-/* Buttons */
-.btn {
-    border-radius: 25px;
-    padding: 12px 24px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border-width: 2px;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-}
-
-.btn-primary:hover {
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-}
-
-.btn-success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    border: none;
-}
-
-.btn-success:hover {
-    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
-}
-
-.btn-outline-secondary {
-    border-color: #6c757d;
-    color: #6c757d;
-}
-
-.btn-outline-secondary:hover {
-    background: #6c757d;
-    border-color: #6c757d;
-    color: white;
-}
-
-/* Modal de Confirmación */
-#confirmModal .modal-content {
-    border: none;
-    border-radius: 25px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-}
-
-#confirmModal .modal-header {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: white;
-    border-radius: 25px 25px 0 0;
-    border-bottom: none;
-    padding: 2rem;
-}
-
-#confirmModal .modal-body {
-    padding: 3rem 2rem;
-}
-
-.success-icon {
+/* Success Modal */
+#confirmModal .success-icon {
     font-size: 4rem;
-    color: #28a745;
+    color: #00a896;
+    margin-bottom: 1rem;
 }
 
-.success-icon i {
-    animation: bounce 1s infinite;
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-    }
-    40% {
-        transform: translateY(-10px);
-    }
-    60% {
-        transform: translateY(-5px);
-    }
-}
-
-/* Animaciones */
+/* Animations */
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
@@ -396,57 +298,7 @@
     }
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.form-step.active {
-    animation: fadeInUp 0.5s ease forwards;
-}
-
-/* Loading States */
-.btn:disabled {
-    opacity: 0.7;
-    transform: none !important;
-}
-
-.btn .fa-spinner {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* Responsive Design */
-@media (max-width: 992px) {
-    .steps-container {
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    
-    .steps-container::before {
-        display: none;
-    }
-    
-    .step {
-        flex: 1;
-        min-width: calc(50% - 0.5rem);
-    }
-    
-    .form-card .card-body {
-        padding: 1.5rem;
-    }
-}
-
+/* Responsive */
 @media (max-width: 768px) {
     .steps-container {
         justify-content: center;
@@ -463,101 +315,23 @@
         font-size: 1rem;
     }
     
-    .step-title {
-        font-size: 0.8rem;
-    }
-    
     .form-card .card-body {
-        padding: 1rem;
-    }
-    
-    .navigation-card .card-body {
         padding: 1rem;
     }
     
     .navigation-card .d-flex {
         flex-direction: column;
         gap: 1rem;
-        text-align: center;
     }
     
     .btn {
         width: 100%;
-        margin-bottom: 0.5rem;
-    }
-    
-    .form-check-group {
-        flex-direction: column;
-        gap: 0.5rem;
     }
 }
 
 @media (max-width: 576px) {
     .form-control,
     .form-select {
-        font-size: 16px; /* Prevenir zoom en iOS */
-    }
-    
-    .review-item strong {
-        display: block;
-        margin-bottom: 5px;
-    }
-    
-    .consent-section {
-        padding: 1rem;
-    }
-    
-    #confirmModal .modal-body {
-        padding: 2rem 1rem;
-    }
-    
-    .success-icon {
-        font-size: 3rem;
-    }
-}
-
-/* Estados específicos */
-.required-field-highlight {
-    border-color: #ffc107 !important;
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
-}
-
-.field-error {
-    animation: shake 0.5s ease-in-out;
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-}
-
-/* Mejoras de accesibilidad */
-.form-control:focus,
-.form-select:focus,
-.btn:focus {
-    outline: none;
-}
-
-.form-check-input:focus {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-/* Print styles */
-@media print {
-    .navigation-card,
-    .steps-card {
-        display: none;
-    }
-    
-    .form-step {
-        display: block !important;
-        break-inside: avoid;
-    }
-    
-    .form-card {
-        box-shadow: none;
-        border: 1px solid #dee2e6;
+        font-size: 16px;
     }
 }
