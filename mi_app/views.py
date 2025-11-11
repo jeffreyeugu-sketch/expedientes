@@ -795,3 +795,52 @@ def eliminar_usuario(request, user_id):
             'success': False,
             'message': f'Error al eliminar usuario: {str(e)}'
         })
+    
+@login_required
+def perfil_usuario(request):
+    """Vista del perfil del usuario actual"""
+    usuario = request.user
+    
+    if request.method == 'POST':
+        try:
+            # Actualizar datos básicos
+            usuario.first_name = request.POST.get('first_name')
+            usuario.last_name = request.POST.get('last_name')
+            usuario.email = request.POST.get('email')
+            
+            # Cambiar contraseña solo si se proporciona
+            password_actual = request.POST.get('password_actual')
+            password_nueva = request.POST.get('password_nueva')
+            password_confirmar = request.POST.get('password_confirmar')
+            
+            if password_actual and password_nueva:
+                if usuario.check_password(password_actual):
+                    if password_nueva == password_confirmar:
+                        usuario.set_password(password_nueva)
+                        messages.success(request, 'Contraseña actualizada. Por favor inicia sesión nuevamente.')
+                        auth_logout(request)
+                        return redirect('login')
+                    else:
+                        messages.error(request, 'Las contraseñas nuevas no coinciden')
+                        return render(request, 'mi_app/perfil_usuario.html', {'usuario': usuario})
+                else:
+                    messages.error(request, 'La contraseña actual es incorrecta')
+                    return render(request, 'mi_app/perfil_usuario.html', {'usuario': usuario})
+            
+            usuario.save()
+            
+            # Actualizar perfil
+            profile = usuario.profile
+            profile.telefono = request.POST.get('telefono')
+            profile.cedula_profesional = request.POST.get('cedula_profesional')
+            profile.especialidad = request.POST.get('especialidad')
+            profile.save()
+            
+            messages.success(request, 'Perfil actualizado exitosamente')
+            return redirect('perfil_usuario')
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar perfil: {str(e)}')
+    
+    context = {'usuario': usuario}
+    return render(request, 'mi_app/perfil_usuario.html', context)

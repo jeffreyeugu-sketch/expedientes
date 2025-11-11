@@ -91,16 +91,27 @@
                                 <input type="text" class="form-control search-box" placeholder="Buscar paciente...">
                             </div>
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle user-dropdown" type="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-user me-2"></i>Dr. Usuario
+                                <button class="btn btn-outline-secondary dropdown-toggle user-dropdown" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user me-2"></i>{{ request.user.get_full_name|default:request.user.username }}
                                 </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Perfil</a></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configuración</a></li>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'perfil_usuario' %}">
+                                            <i class="fas fa-user-circle me-2"></i>Mi Perfil
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'lista_usuarios' %}">
+                                            <i class="fas fa-cog me-2"></i>Configuración
+                                        </a>
+                                    </li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{% url 'logout' %}">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                                    </a></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </div>

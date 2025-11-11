@@ -9,6 +9,9 @@ urlpatterns = [
 
     # Dashboard
     path('', views.dashboard, name='dashboard'),
+
+    # Perfil del usuario (AGREGAR ESTA LÍNEA)
+    path('perfil/', views.perfil_usuario, name='perfil_usuario'),
     
     # Pacientes
     path('pacientes/', views.lista_pacientes, name='lista_pacientes'),

@@ -6,19 +6,27 @@
 {% block page_title %}Gestión de Usuarios{% endblock %}
 {% block page_subtitle %}Administra los usuarios del sistema{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/usuarios.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
         <div class="stats-summary">
             <div class="stat-item">
                 <i class="fas fa-users text-primary"></i>
-                <span class="stat-value">{{ total_usuarios }}</span>
-                <span class="stat-label">Total Usuarios</span>
+                <div>
+                    <span class="stat-value">{{ total_usuarios }}</span>
+                    <span class="stat-label">Total Usuarios</span>
+                </div>
             </div>
             <div class="stat-item">
                 <i class="fas fa-user-check text-success"></i>
-                <span class="stat-value">{{ usuarios_activos }}</span>
-                <span class="stat-label">Activos</span>
+                <div>
+                    <span class="stat-value">{{ usuarios_activos }}</span>
+                    <span class="stat-label">Activos</span>
+                </div>
             </div>
         </div>
     </div>
@@ -100,35 +108,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.stats-summary {
-    display: flex;
-    gap: 20px;
-}
-.stat-item {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex: 1;
-}
-.stat-item i {
-    font-size: 2rem;
-}
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: bold;
-    display: block;
-}
-.stat-label {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-</style>
 
 <script>
 function eliminarUsuario(userId) {

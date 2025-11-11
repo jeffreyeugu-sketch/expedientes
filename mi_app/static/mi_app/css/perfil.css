@@ -1,0 +1,136 @@
+/* Perfil de Usuario */
+.profile-card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+
+.profile-avatar {
+    margin: 20px 0;
+}
+
+.profile-avatar i {
+    color: #667eea;
+}
+
+.profile-card h4 {
+    font-weight: 600;
+    color: #333;
+}
+
+.profile-card .text-muted {
+    color: #6c757d !important;
+}
+
+.profile-stats {
+    text-align: left;
+    padding: 15px 0;
+}
+
+.profile-stats .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.profile-stats .stat-item i {
+    font-size: 2rem;
+    width: 40px;
+    text-align: center;
+}
+
+.profile-stats .stat-item strong {
+    display: block;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.profile-stats .stat-item p {
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* Formulario de perfil */
+.card-header {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    padding: 15px 20px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.card-header i {
+    color: #667eea;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    transition: all 0.3s;
+    padding: 10px 15px;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-control:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+    border-radius: 8px;
+    padding: 12px 15px;
+}
+
+.alert-info i {
+    color: #0c5460;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.badge {
+    padding: 8px 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 20px;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .profile-card {
+        margin-bottom: 20px;
+    }
+}

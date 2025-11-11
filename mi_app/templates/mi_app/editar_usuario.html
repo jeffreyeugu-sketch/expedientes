@@ -6,6 +6,10 @@
 {% block page_title %}Editar Usuario{% endblock %}
 {% block page_subtitle %}Modificar información de {{ usuario.username }}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/usuarios.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
