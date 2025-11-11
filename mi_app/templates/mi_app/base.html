@@ -68,11 +68,12 @@
                         <span class="nav-link-text">Reportes</span>
                     </a>
                     <a class="nav-link {% block nav_configuracion %}{% endblock %}" 
-                       href="#configuracion" 
-                       data-title="Configuración">
-                        <i class="fas fa-cog"></i>
-                        <span class="nav-link-text">Configuración</span>
-                    </a>
+                    href="{% url 'lista_usuarios' %}" 
+                    data-title="Configuración">
+                     <i class="fas fa-cog"></i>
+                     <span class="nav-link-text">Configuración</span>
+                 </a>
+
                 </nav>
             </div>
             
@@ -97,7 +98,9 @@
                                     <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Perfil</a></li>
                                     <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configuración</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'logout' %}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                    </a></li>
                                 </ul>
                             </div>
                         </div>

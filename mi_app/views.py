@@ -10,8 +10,14 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from .models import Consultation
 import json
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from .models import UserProfile
 
 
+
+@login_required
 def lista_pacientes(request):
     """Lista de todos los pacientes desde la base de datos"""
     
@@ -59,6 +65,7 @@ def lista_pacientes(request):
     }
     return render(request, 'mi_app/lista_pacientes.html', context)
 
+@login_required
 def dashboard(request):
     """Dashboard con datos reales de la base de datos"""
     
@@ -77,6 +84,7 @@ def dashboard(request):
     }
     return render(request, 'mi_app/dashboard.html', context)
 
+@login_required
 def nuevo_paciente(request):
     """Formulario para registrar nuevo paciente"""
     if request.method == 'POST':
@@ -129,6 +137,7 @@ def nuevo_paciente(request):
     # Si es GET, mostrar el formulario
     return render(request, 'mi_app/nuevo_paciente_simple.html')
 
+@login_required
 def detalle_paciente(request, paciente_id):
     """Detalle completo del paciente con historial de consultas mejorado - ACTUALIZADO"""
     try:
@@ -181,6 +190,7 @@ def detalle_paciente(request, paciente_id):
         messages.error(request, 'Paciente no encontrado')
         return redirect('lista_pacientes')
 
+@login_required
 def lista_consultas(request):
     """Lista de consultas"""
     consultas_ejemplo = [
@@ -191,6 +201,7 @@ def lista_consultas(request):
     context = {'consultas': consultas_ejemplo}
     return render(request, 'mi_app/lista_consultas.html', context)
 
+@login_required
 def agenda_consultas(request):
     """Vista de agenda - consultas del día"""
     from datetime import datetime, timedelta
@@ -246,6 +257,7 @@ def agenda_consultas(request):
     
     return render(request, 'mi_app/agenda_consultas.html', context)
 
+@login_required
 def nueva_consulta(request):
     """Formulario para programar nueva consulta"""
     
@@ -317,6 +329,7 @@ def nueva_consulta(request):
     
     return render(request, 'mi_app/nueva_consulta.html', context)
 
+@login_required
 def get_nueva_consulta_context():
     """Helper function para obtener contexto de nueva consulta"""
     return {
@@ -325,6 +338,7 @@ def get_nueva_consulta_context():
         'fecha_hoy': datetime.now().date(),
     }
 
+@login_required
 def detalle_consulta(request, consulta_id):
     """Vista detallada de una consulta específica"""
     try:
@@ -396,7 +410,8 @@ def detalle_consulta(request, consulta_id):
     except Consultation.DoesNotExist:
         messages.error(request, 'Consulta no encontrada')
         return redirect('agenda_consultas')
-    
+
+@login_required    
 @require_POST
 def cancelar_consulta(request, consulta_id):
     """Cancelar una consulta programada"""
@@ -484,6 +499,7 @@ import json
 # Si NO existe, copiarla completa
 # ============================================
 
+@login_required
 def editar_consulta(request, consulta_id):
     """Editar una consulta programada"""
     try:
@@ -610,3 +626,172 @@ def editar_consulta(request, consulta_id):
         messages.error(request, f'Error: {str(e)}')
         print(f"Error general en editar_consulta: {e}")
         return redirect('agenda_consultas')
+
+
+def login_view(request):
+    """Vista de login"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            auth_login(request, user)
+            next_url = request.GET.get('next', 'dashboard')
+            return redirect(next_url)
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos')
+    
+    return render(request, 'mi_app/login.html')
+
+
+def logout_view(request):
+    """Vista de logout"""
+    auth_logout(request)
+    messages.success(request, 'Sesión cerrada exitosamente')
+    return redirect('login')
+
+@login_required
+def lista_usuarios(request):
+    """Lista todos los usuarios del sistema"""
+    usuarios = User.objects.select_related('profile').all().order_by('-date_joined')
+    
+    usuarios_data = []
+    for usuario in usuarios:
+        usuarios_data.append({
+            'id': usuario.id,
+            'username': usuario.username,
+            'nombre_completo': usuario.get_full_name() or usuario.username,
+            'email': usuario.email,
+            'rol': usuario.profile.get_rol_display() if hasattr(usuario, 'profile') else 'N/A',
+            'activo': usuario.is_active,
+            'ultimo_login': usuario.last_login,
+            'fecha_registro': usuario.date_joined,
+        })
+    
+    context = {
+        'usuarios': usuarios_data,
+        'total_usuarios': usuarios.count(),
+        'usuarios_activos': usuarios.filter(is_active=True).count(),
+    }
+    
+    return render(request, 'mi_app/lista_usuarios.html', context)
+
+@login_required
+def nuevo_usuario(request):
+    """Crear nuevo usuario"""
+    if request.method == 'POST':
+        try:
+            # Datos básicos
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            
+            # Datos del perfil
+            rol = request.POST.get('rol')
+            cedula = request.POST.get('cedula_profesional')
+            especialidad = request.POST.get('especialidad')
+            telefono = request.POST.get('telefono')
+            
+            # Validar que el usuario no exista
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'El nombre de usuario ya existe')
+                return render(request, 'mi_app/nuevo_usuario.html')
+            
+            # Crear usuario
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            # Actualizar perfil
+            profile = user.profile
+            profile.rol = rol
+            profile.cedula_profesional = cedula
+            profile.especialidad = especialidad
+            profile.telefono = telefono
+            profile.save()
+            
+            messages.success(request, f'Usuario {username} creado exitosamente')
+            return redirect('lista_usuarios')
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear usuario: {str(e)}')
+    
+    return render(request, 'mi_app/nuevo_usuario.html')
+
+@login_required
+def editar_usuario(request, user_id):
+    """Editar usuario existente"""
+    usuario = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        try:
+            # Actualizar datos básicos
+            usuario.username = request.POST.get('username')
+            usuario.email = request.POST.get('email')
+            usuario.first_name = request.POST.get('first_name')
+            usuario.last_name = request.POST.get('last_name')
+            usuario.is_active = request.POST.get('is_active') == 'on'
+            
+            # Cambiar contraseña solo si se proporciona
+            new_password = request.POST.get('password')
+            if new_password:
+                usuario.set_password(new_password)
+            
+            usuario.save()
+            
+            # Actualizar perfil
+            profile = usuario.profile
+            profile.rol = request.POST.get('rol')
+            profile.cedula_profesional = request.POST.get('cedula_profesional')
+            profile.especialidad = request.POST.get('especialidad')
+            profile.telefono = request.POST.get('telefono')
+            profile.save()
+            
+            messages.success(request, 'Usuario actualizado exitosamente')
+            return redirect('lista_usuarios')
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar usuario: {str(e)}')
+    
+    context = {'usuario': usuario}
+    return render(request, 'mi_app/editar_usuario.html', context)
+
+@login_required
+@require_POST
+def eliminar_usuario(request, user_id):
+    """Eliminar/desactivar usuario"""
+    try:
+        usuario = get_object_or_404(User, id=user_id)
+        
+        # No permitir eliminar al propio usuario
+        if usuario == request.user:
+            return JsonResponse({
+                'success': False,
+                'message': 'No puedes eliminar tu propio usuario'
+            })
+        
+        # Desactivar en lugar de eliminar
+        usuario.is_active = False
+        usuario.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Usuario {usuario.username} desactivado exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al eliminar usuario: {str(e)}'
+        })
