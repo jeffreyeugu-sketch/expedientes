@@ -844,3 +844,278 @@ def perfil_usuario(request):
     
     context = {'usuario': usuario}
     return render(request, 'mi_app/perfil_usuario.html', context)
+
+@login_required    
+def calendario_consultas(request):
+    """Vista de calendario mensual para consultas"""
+    from datetime import datetime, timedelta
+    from calendar import monthrange
+    from django.utils import timezone
+    from zoneinfo import ZoneInfo
+    import json
+    
+    mexico_tz = ZoneInfo('America/Mexico_City')
+    ahora_mexico = timezone.now().astimezone(mexico_tz)
+    
+    # Obtener mes y año de la URL o usar actual
+    mes = int(request.GET.get('mes', ahora_mexico.month))
+    anio = int(request.GET.get('anio', ahora_mexico.year))
+    
+    # Calcular mes anterior y siguiente
+    if mes == 1:
+        mes_anterior = 12
+        anio_anterior = anio - 1
+    else:
+        mes_anterior = mes - 1
+        anio_anterior = anio
+    
+    if mes == 12:
+        mes_siguiente = 1
+        anio_siguiente = anio + 1
+    else:
+        mes_siguiente = mes + 1
+        anio_siguiente = anio
+    
+    # Límites del mes
+    primer_dia = datetime(anio, mes, 1, tzinfo=mexico_tz)
+    ultimo_dia_numero = monthrange(anio, mes)[1]
+    ultimo_dia = datetime(anio, mes, ultimo_dia_numero, 23, 59, 59, tzinfo=mexico_tz)
+    
+    # Obtener filtros
+    doctor_filtro = request.GET.get('doctor')
+    estado_filtro = request.GET.get('estado')
+    
+    # Consultas del mes con filtros aplicados
+    consultas = Consultation.objects.filter(
+        fecha_consulta__gte=primer_dia,
+        fecha_consulta__lte=ultimo_dia
+    ).select_related('patient', 'doctor')
+    
+    if doctor_filtro:
+        consultas = consultas.filter(doctor_id=doctor_filtro)
+    
+    if estado_filtro:
+        consultas = consultas.filter(estado=estado_filtro)
+    
+    consultas = consultas.order_by('fecha_consulta')
+    
+    # Agrupar por día
+    consultas_por_dia = {}
+    for consulta in consultas:
+        dia = consulta.fecha_consulta.day
+        if dia not in consultas_por_dia:
+            consultas_por_dia[dia] = []
+        consultas_por_dia[dia].append({
+            'id': consulta.id,
+            'paciente': consulta.patient.nombre_completo,
+            'hora': consulta.fecha_consulta.strftime('%H:%M'),
+            'tipo': consulta.tipo_consulta,
+            'estado': consulta.estado,
+        })
+    
+    # Doctores para filtro
+    doctores = Doctor.objects.filter(activo=True)
+    pacientes = Patient.objects.filter(activo=True).order_by('apellidos', 'nombres')
+    
+    context = {
+        'mes': mes,
+        'anio': anio,
+        'mes_anterior': mes_anterior,
+        'anio_anterior': anio_anterior,
+        'mes_siguiente': mes_siguiente,
+        'anio_siguiente': anio_siguiente,
+        'mes_nombre': primer_dia.strftime('%B'),
+        'dias_mes': ultimo_dia_numero,
+        'primer_dia_semana': primer_dia.weekday(),
+        'consultas_por_dia': json.dumps(consultas_por_dia),
+        'hoy': ahora_mexico.date(),
+        'doctores': doctores,
+        'pacientes': pacientes,
+        'doctor_filtro': doctor_filtro,
+        'estado_filtro': estado_filtro,
+    }
+    
+    return render(request, 'mi_app/calendario_consultas.html', context)
+
+@login_required 
+def registrar_pago(request, consulta_id):
+    """Registrar pago de una consulta"""
+    try:
+        consulta = Consultation.objects.get(id=consulta_id)
+        
+        if request.method == 'POST':
+            monto_total = request.POST.get('monto_total')
+            monto_pagado = request.POST.get('monto_pagado', monto_total)
+            descuento = request.POST.get('descuento', 0)
+            metodo_pago = request.POST.get('metodo_pago')
+            referencia = request.POST.get('referencia', '')
+            notas = request.POST.get('notas', '')
+            
+            # Crear pago
+            pago = Payment.objects.create(
+                consultation=consulta,
+                monto_total=monto_total,
+                monto_pagado=monto_pagado,
+                descuento=descuento,
+                metodo_pago=metodo_pago,
+                referencia=referencia,
+                notas=notas,
+                fecha_pago=timezone.now()
+            )
+            
+            # Determinar estado
+            if float(monto_pagado) >= pago.monto_final:
+                pago.estado = 'pagado'
+            elif float(monto_pagado) > 0:
+                pago.estado = 'parcial'
+            else:
+                pago.estado = 'pendiente'
+            
+            pago.save()
+            
+            messages.success(request, f'Pago registrado correctamente. Folio: #{pago.id}')
+            
+            # Preguntar si desea generar factura
+            if request.POST.get('generar_factura') == 'si':
+                return redirect('generar_factura', pago_id=pago.id)
+            
+            return redirect('detalle_consulta', consulta_id=consulta.id)
+        
+        # GET - Mostrar formulario
+        # Verificar si ya existe un pago
+        pago_existente = Payment.objects.filter(consultation=consulta).first()
+        
+        context = {
+            'consulta': consulta,
+            'pago_existente': pago_existente,
+        }
+        
+        return render(request, 'mi_app/registrar_pago.html', context)
+        
+    except Consultation.DoesNotExist:
+        messages.error(request, 'Consulta no encontrada')
+        return redirect('agenda_consultas')
+
+@login_required 
+def lista_pagos(request):
+    """Lista de todos los pagos"""
+    
+    # Filtros
+    estado_filtro = request.GET.get('estado', '')
+    metodo_filtro = request.GET.get('metodo', '')
+    fecha_desde = request.GET.get('fecha_desde', '')
+    fecha_hasta = request.GET.get('fecha_hasta', '')
+    
+    pagos = Payment.objects.all().select_related(
+        'consultation__patient',
+        'consultation__doctor'
+    ).order_by('-fecha_creacion')
+    
+    if estado_filtro:
+        pagos = pagos.filter(estado=estado_filtro)
+    
+    if metodo_filtro:
+        pagos = pagos.filter(metodo_pago=metodo_filtro)
+    
+    if fecha_desde:
+        pagos = pagos.filter(fecha_creacion__gte=fecha_desde)
+    
+    if fecha_hasta:
+        pagos = pagos.filter(fecha_creacion__lte=fecha_hasta)
+    
+    # Estadísticas
+    from django.db.models import Sum, Count
+    stats = {
+        'total_pagos': pagos.count(),
+        'monto_total': pagos.aggregate(Sum('monto_pagado'))['monto_pagado__sum'] or 0,
+        'pagos_pendientes': pagos.filter(estado='pendiente').count(),
+        'pagos_completados': pagos.filter(estado='pagado').count(),
+    }
+    
+    context = {
+        'pagos': pagos[:50],  # Primeros 50
+        'stats': stats,
+        'estado_filtro': estado_filtro,
+        'metodo_filtro': metodo_filtro,
+    }
+    
+    return render(request, 'mi_app/lista_pagos.html', context)
+
+@login_required 
+def generar_factura(request, pago_id):
+    """Generar factura para un pago"""
+    try:
+        pago = Payment.objects.get(id=pago_id)
+        
+        # Verificar si ya tiene factura
+        if hasattr(pago, 'factura'):
+            messages.warning(request, 'Este pago ya tiene una factura generada')
+            return redirect('detalle_factura', factura_id=pago.factura.id)
+        
+        if request.method == 'POST':
+            # Generar folio único
+            import random
+            folio = f"FAC-{timezone.now().year}-{random.randint(10000, 99999)}"
+            
+            # Calcular IVA (16%)
+            subtotal = pago.monto_final
+            iva = subtotal * 0.16
+            total = subtotal + iva
+            
+            # Crear factura
+            factura = Invoice.objects.create(
+                payment=pago,
+                folio=folio,
+                tipo_comprobante=request.POST.get('tipo_comprobante'),
+                cliente_nombre=request.POST.get('cliente_nombre'),
+                cliente_rfc=request.POST.get('cliente_rfc', ''),
+                cliente_direccion=request.POST.get('cliente_direccion', ''),
+                cliente_email=request.POST.get('cliente_email', ''),
+                subtotal=subtotal,
+                iva=iva,
+                total=total,
+            )
+            
+            # Crear concepto
+            ConceptoFactura.objects.create(
+                factura=factura,
+                cantidad=1,
+                descripcion=f"Consulta médica - {pago.consultation.get_tipo_consulta_display()}",
+                precio_unitario=subtotal,
+                importe=subtotal,
+            )
+            
+            messages.success(request, f'Factura generada correctamente. Folio: {folio}')
+            return redirect('detalle_factura', factura_id=factura.id)
+        
+        # GET - Mostrar formulario
+        paciente = pago.consultation.patient
+        
+        context = {
+            'pago': pago,
+            'paciente': paciente,
+        }
+        
+        return render(request, 'mi_app/generar_factura.html', context)
+        
+    except Payment.DoesNotExist:
+        messages.error(request, 'Pago no encontrado')
+        return redirect('lista_pagos')
+
+@login_required
+def detalle_factura(request, factura_id):
+    """Ver detalle de una factura"""
+    try:
+        factura = Invoice.objects.get(id=factura_id)
+        conceptos = factura.conceptos.all()
+        
+        context = {
+            'factura': factura,
+            'conceptos': conceptos,
+        }
+        
+        return render(request, 'mi_app/detalle_factura.html', context)
+        
+    except Invoice.DoesNotExist:
+        messages.error(request, 'Factura no encontrada')
+        return redirect('lista_pagos')

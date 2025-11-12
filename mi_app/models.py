@@ -276,3 +276,257 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, 'profile'):
         instance.profile.save()
+
+class Payment(models.Model):
+    """Modelo para pagos de consultas"""
+    
+    METODO_PAGO_CHOICES = [
+        ('efectivo', 'Efectivo'),
+        ('tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('transferencia', 'Transferencia Bancaria'),
+        ('cheque', 'Cheque'),
+        ('paypal', 'PayPal'),
+        ('otro', 'Otro'),
+    ]
+    
+    ESTADO_PAGO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('pagado', 'Pagado'),
+        ('parcial', 'Pago Parcial'),
+        ('cancelado', 'Cancelado'),
+        ('reembolsado', 'Reembolsado'),
+    ]
+    
+    consultation = models.ForeignKey(
+        Consultation, 
+        on_delete=models.CASCADE, 
+        related_name='pagos',
+        verbose_name="Consulta"
+    )
+    
+    # Montos
+    monto_total = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        verbose_name="Monto Total"
+    )
+    monto_pagado = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Monto Pagado"
+    )
+    descuento = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Descuento"
+    )
+    
+    # Información del pago
+    metodo_pago = models.CharField(
+        max_length=20, 
+        choices=METODO_PAGO_CHOICES,
+        verbose_name="Método de Pago"
+    )
+    estado = models.CharField(
+        max_length=20, 
+        choices=ESTADO_PAGO_CHOICES, 
+        default='pendiente',
+        verbose_name="Estado"
+    )
+    
+    # Detalles adicionales
+    referencia = models.CharField(
+        max_length=100, 
+        blank=True,
+        verbose_name="Referencia/Folio"
+    )
+    notas = models.TextField(
+        blank=True,
+        verbose_name="Notas"
+    )
+    
+    # Fechas
+    fecha_pago = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Fecha de Pago"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Creación"
+    )
+    fecha_actualizacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última Actualización"
+    )
+    
+    class Meta:
+        verbose_name = "Pago"
+        verbose_name_plural = "Pagos"
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"Pago #{self.id} - {self.consultation.patient.nombre_completo}"
+    
+    @property
+    def saldo_pendiente(self):
+        """Calcula el saldo pendiente"""
+        return self.monto_total - self.descuento - self.monto_pagado
+    
+    @property
+    def monto_final(self):
+        """Monto total menos descuento"""
+        return self.monto_total - self.descuento
+    
+    def marcar_como_pagado(self):
+        """Marca el pago como completado"""
+        self.estado = 'pagado'
+        self.monto_pagado = self.monto_final
+        if not self.fecha_pago:
+            self.fecha_pago = timezone.now()
+        self.save()
+
+
+class Invoice(models.Model):
+    """Modelo para facturas"""
+    
+    TIPO_COMPROBANTE_CHOICES = [
+        ('factura', 'Factura (CFDI)'),
+        ('recibo', 'Recibo Simple'),
+        ('nota', 'Nota de Venta'),
+    ]
+    
+    payment = models.OneToOneField(
+        Payment,
+        on_delete=models.CASCADE,
+        related_name='factura',
+        verbose_name="Pago"
+    )
+    
+    # Información fiscal
+    folio = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="Folio"
+    )
+    tipo_comprobante = models.CharField(
+        max_length=20,
+        choices=TIPO_COMPROBANTE_CHOICES,
+        default='recibo',
+        verbose_name="Tipo de Comprobante"
+    )
+    
+    # Datos del paciente/cliente
+    cliente_nombre = models.CharField(
+        max_length=200,
+        verbose_name="Nombre del Cliente"
+    )
+    cliente_rfc = models.CharField(
+        max_length=13,
+        blank=True,
+        verbose_name="RFC"
+    )
+    cliente_direccion = models.TextField(
+        blank=True,
+        verbose_name="Dirección"
+    )
+    cliente_email = models.EmailField(
+        blank=True,
+        verbose_name="Email"
+    )
+    
+    # Desglose
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Subtotal"
+    )
+    iva = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="IVA"
+    )
+    total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Total"
+    )
+    
+    # Control
+    fecha_emision = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Emisión"
+    )
+    cancelada = models.BooleanField(
+        default=False,
+        verbose_name="Cancelada"
+    )
+    fecha_cancelacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Cancelación"
+    )
+    motivo_cancelacion = models.TextField(
+        blank=True,
+        verbose_name="Motivo de Cancelación"
+    )
+    
+    class Meta:
+        verbose_name = "Factura"
+        verbose_name_plural = "Facturas"
+        ordering = ['-fecha_emision']
+    
+    def __str__(self):
+        return f"Factura {self.folio} - {self.cliente_nombre}"
+    
+    def cancelar(self, motivo):
+        """Cancela la factura"""
+        self.cancelada = True
+        self.fecha_cancelacion = timezone.now()
+        self.motivo_cancelacion = motivo
+        self.save()
+
+
+class ConceptoFactura(models.Model):
+    """Conceptos/items de una factura"""
+    
+    factura = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='conceptos',
+        verbose_name="Factura"
+    )
+    
+    cantidad = models.IntegerField(
+        default=1,
+        verbose_name="Cantidad"
+    )
+    descripcion = models.CharField(
+        max_length=500,
+        verbose_name="Descripción"
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Precio Unitario"
+    )
+    importe = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Importe"
+    )
+    
+    class Meta:
+        verbose_name = "Concepto de Factura"
+        verbose_name_plural = "Conceptos de Factura"
+    
+    def __str__(self):
+        return f"{self.descripcion} - ${self.importe}"
+    
+    def save(self, *args, **kwargs):
+        """Calcula el importe automáticamente"""
+        self.importe = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)
