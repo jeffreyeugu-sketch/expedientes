@@ -1,0 +1,148 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block title %}Factura {{ factura.folio }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/pagos.css' %}">
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .invoice-container { box-shadow: none; border: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h2><i class="fas fa-file-invoice me-2"></i>Factura</h2>
+        </div>
+        <div>
+            <a href="{% url 'lista_pagos' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print me-2"></i>Imprimir
+            </button>
+            <button onclick="descargarPDF()" class="btn btn-success">
+                <i class="fas fa-download me-2"></i>Descargar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Factura -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card invoice-container">
+                <div class="card-body p-5">
+                    <!-- Header de la Factura -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h3 class="text-primary mb-3">CONSULTORIO MÉDICO</h3>
+                            <p class="mb-1"><strong>Dr. {{ factura.payment.consultation.doctor.nombre_completo }}</strong></p>
+                            <p class="mb-1">Cédula Profesional: {{ factura.payment.consultation.doctor.cedula_profesional }}</p>
+                            <p class="mb-1">Tel: {{ factura.payment.consultation.doctor.telefono }}</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h4 class="text-uppercase mb-3">{{ factura.get_tipo_comprobante_display }}</h4>
+                            <p class="mb-1"><strong>Folio:</strong> {{ factura.folio }}</p>
+                            <p class="mb-1"><strong>Fecha:</strong> {{ factura.fecha_emision|date:"d/m/Y" }}</p>
+                            {% if factura.cancelada %}
+                            <span class="badge bg-danger mt-2">CANCELADA</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Datos del Cliente -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">Datos del Cliente</h5>
+                            <p class="mb-1"><strong>Nombre:</strong> {{ factura.cliente_nombre }}</p>
+                            {% if factura.cliente_rfc %}
+                            <p class="mb-1"><strong>RFC:</strong> {{ factura.cliente_rfc }}</p>
+                            {% endif %}
+                            {% if factura.cliente_direccion %}
+                            <p class="mb-1"><strong>Dirección:</strong> {{ factura.cliente_direccion }}</p>
+                            {% endif %}
+                            {% if factura.cliente_email %}
+                            <p class="mb-1"><strong>Email:</strong> {{ factura.cliente_email }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Conceptos -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cantidad</th>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Precio Unitario</th>
+                                    <th class="text-end">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for concepto in conceptos %}
+                                <tr>
+                                    <td>{{ concepto.cantidad }}</td>
+                                    <td>{{ concepto.descripcion }}</td>
+                                    <td class="text-end">${{ concepto.precio_unitario|floatformat:2 }}</td>
+                                    <td class="text-end">${{ concepto.importe|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Totales -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Método de Pago:</strong> {{ factura.payment.get_metodo_pago_display }}</p>
+                            {% if factura.payment.referencia %}
+                            <p><strong>Referencia:</strong> {{ factura.payment.referencia }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="invoice-totals">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Subtotal:</span>
+                                    <strong>${{ factura.subtotal|floatformat:2 }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>IVA (16%):</span>
+                                    <strong>${{ factura.iva|floatformat:2 }}</strong>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <strong class="h5">Total:</strong>
+                                    <strong class="h5 text-primary">${{ factura.total|floatformat:2 }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-5 pt-4 border-top">
+                        <p class="text-center text-muted mb-0">
+                            <small>Este documento es una representación impresa de un comprobante fiscal digital</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function descargarPDF() {
+        window.print();
+    }
+</script>
+{% endblock %}

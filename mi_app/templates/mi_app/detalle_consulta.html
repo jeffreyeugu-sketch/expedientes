@@ -265,6 +265,11 @@
                             <button type="submit" class="btn btn-success">
                                 <i class="fas fa-check me-2"></i>Completar Consulta
                             </button>
+                            {% if consulta.estado == 'completada' %}
+                            <a href="{% url 'registrar_pago' consulta.id %}" class="btn btn-success">
+                                <i class="fas fa-dollar-sign me-2"></i>Registrar Pago
+                            </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

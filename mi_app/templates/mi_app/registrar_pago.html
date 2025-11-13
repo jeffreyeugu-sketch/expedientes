@@ -1,0 +1,231 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block title %}Registrar Pago{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/pagos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-dollar-sign me-2"></i>Registrar Pago</h2>
+                    <p class="text-muted mb-0">Consulta #{{ consulta.id }}</p>
+                </div>
+                <a href="{% url 'detalle_consulta' consulta.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+
+            <!-- Información de la Consulta -->
+            <div class="card info-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información de la Consulta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Paciente:</strong> {{ consulta.patient.nombre_completo }}</p>
+                            <p><strong>Doctor:</strong> {{ consulta.doctor.nombre_completo }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fecha:</strong> {{ consulta.fecha_consulta|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Tipo:</strong> {{ consulta.get_tipo_consulta_display }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if pago_existente %}
+            <!-- Alerta de pago existente -->
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Esta consulta ya tiene un pago registrado.
+                <a href="{% url 'lista_pagos' %}" class="alert-link">Ver pagos</a>
+            </div>
+            {% endif %}
+
+            <!-- Formulario de Pago -->
+            <form method="post" id="formPago">
+                {% csrf_token %}
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-cash-register me-2"></i>Datos del Pago</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Monto Total *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="monto_total" 
+                                           id="montoTotal" step="0.01" min="0" required
+                                           placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Descuento</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="descuento" 
+                                           id="descuento" step="0.01" min="0" value="0"
+                                           placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Monto Pagado *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="monto_pagado" 
+                                           id="montoPagado" step="0.01" min="0" required
+                                           placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Método de Pago *</label>
+                                <select class="form-select" name="metodo_pago" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="efectivo">Efectivo</option>
+                                    <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+                                    <option value="transferencia">Transferencia Bancaria</option>
+                                    <option value="cheque">Cheque</option>
+                                    <option value="paypal">PayPal</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Referencia/Folio</label>
+                                <input type="text" class="form-control" name="referencia" 
+                                       placeholder="Número de transacción, folio, etc.">
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Notas</label>
+                                <textarea class="form-control" name="notas" rows="2"
+                                          placeholder="Información adicional sobre el pago"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Resumen -->
+                        <div class="payment-summary">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Monto Total:</span>
+                                <strong id="resumenTotal">$0.00</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 text-danger">
+                                <span>Descuento:</span>
+                                <strong id="resumenDescuento">-$0.00</strong>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Monto a Pagar:</span>
+                                <strong class="text-primary" id="resumenFinal">$0.00</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Monto Pagado:</span>
+                                <strong class="text-success" id="resumenPagado">$0.00</strong>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <span>Saldo Pendiente:</span>
+                                <strong class="text-warning" id="resumenPendiente">$0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facturación -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Facturación</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="generar_factura" 
+                                   value="si" id="generarFactura">
+                            <label class="form-check-label" for="generarFactura">
+                                Generar factura después de registrar el pago
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'detalle_consulta' consulta.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Registrar Pago
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calcular automáticamente el resumen
+    function actualizarResumen() {
+        const montoTotal = parseFloat(document.getElementById('montoTotal').value) || 0;
+        const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+        const montoPagado = parseFloat(document.getElementById('montoPagado').value) || 0;
+        
+        const montoFinal = montoTotal - descuento;
+        const saldoPendiente = montoFinal - montoPagado;
+        
+        document.getElementById('resumenTotal').textContent = '$' + montoTotal.toFixed(2);
+        document.getElementById('resumenDescuento').textContent = '-$' + descuento.toFixed(2);
+        document.getElementById('resumenFinal').textContent = '$' + montoFinal.toFixed(2);
+        document.getElementById('resumenPagado').textContent = '$' + montoPagado.toFixed(2);
+        document.getElementById('resumenPendiente').textContent = '$' + saldoPendiente.toFixed(2);
+    }
+    
+    // Auto-completar monto pagado cuando cambia el monto total
+    document.getElementById('montoTotal').addEventListener('input', function() {
+        const montoTotal = parseFloat(this.value) || 0;
+        const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+        document.getElementById('montoPagado').value = (montoTotal - descuento).toFixed(2);
+        actualizarResumen();
+    });
+    
+    document.getElementById('descuento').addEventListener('input', function() {
+        const montoTotal = parseFloat(document.getElementById('montoTotal').value) || 0;
+        const descuento = parseFloat(this.value) || 0;
+        document.getElementById('montoPagado').value = (montoTotal - descuento).toFixed(2);
+        actualizarResumen();
+    });
+    
+    document.getElementById('montoPagado').addEventListener('input', actualizarResumen);
+    
+    // Validación antes de enviar
+    document.getElementById('formPago').addEventListener('submit', function(e) {
+        const montoTotal = parseFloat(document.getElementById('montoTotal').value) || 0;
+        const montoPagado = parseFloat(document.getElementById('montoPagado').value) || 0;
+        
+        if (montoTotal <= 0) {
+            e.preventDefault();
+            alert('El monto total debe ser mayor a 0');
+            return;
+        }
+        
+        if (montoPagado < 0) {
+            e.preventDefault();
+            alert('El monto pagado no puede ser negativo');
+            return;
+        }
+    });
+</script>
+{% endblock %}

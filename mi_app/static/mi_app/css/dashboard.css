@@ -1,351 +1,536 @@
-/* Dashboard - COLORES NEUTROS */
+/* ========================================
+   DASHBOARD - ESTILOS PRINCIPALES
+======================================== */
 
-.stats-card {
-    background: white;
-    border-radius: 20px;
-    padding: 0;
-    border: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    transition: all 0.4s ease;
-    overflow: hidden;
-    position: relative;
+.dashboard-container {
+    padding: 20px;
+    background: #f5f7fa;
+    min-height: 100vh;
 }
 
-.stats-card::before {
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e0e6ed;
+}
+
+.dashboard-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.dashboard-date {
+    font-size: 1rem;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+/* ========================================
+   TARJETAS DE ESTADÍSTICAS
+======================================== */
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
+    width: 100%;
     height: 4px;
-    background: linear-gradient(90deg, #6c757d, #00a896);
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.8), rgba(52, 152, 219, 1));
 }
 
-.stats-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+.stat-card.stat-primary::before {
+    background: linear-gradient(90deg, #3498db, #2980b9);
 }
 
-.stats-card .stats-icon {
-    position: absolute;
-    top: 20px;
-    right: 20px;
+.stat-card.stat-success::before {
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+}
+
+.stat-card.stat-info::before {
+    background: linear-gradient(90deg, #1abc9c, #16a085);
+}
+
+.stat-card.stat-warning::before {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card .stat-icon {
     width: 60px;
     height: 60px;
-    border-radius: 50%;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    opacity: 0.7;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
 }
 
-.stats-primary .stats-icon {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+.stat-primary .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
-.stats-success .stats-icon {
-    background: linear-gradient(135deg, #00a896 0%, #028090 100%);
+.stat-success .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     color: white;
 }
 
-.stats-info .stats-icon {
-    background: linear-gradient(135deg, #00a896 0%, #06d6a0 100%);
+.stat-info .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     color: white;
 }
 
-.stats-warning .stats-icon {
-    background: linear-gradient(135deg, #ffd166 0%, #f4a261 100%);
+.stat-warning .stat-icon {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
     color: white;
 }
 
-.stats-content {
-    padding: 30px;
-    position: relative;
-    z-index: 2;
-}
-
-.stats-number {
-    font-size: 3.5rem;
+.stat-card .stat-content h3 {
+    font-size: 2.5rem;
     font-weight: 700;
     color: #2c3e50;
-    margin-bottom: 8px;
+    margin: 0;
     line-height: 1;
 }
 
-.stats-label {
-    font-size: 1.1rem;
-    font-weight: 600;
+.stat-card .stat-content p {
     color: #7f8c8d;
-    margin-bottom: 12px;
+    margin: 10px 0;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
-.stats-trend {
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-/* Quick Actions */
-.quick-actions-card {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    border: none;
-    box-shadow: 0 15px 35px rgba(108, 117, 125, 0.3);
-}
-
-.quick-actions-card .card-header {
-    background: transparent;
-    border: none;
-    color: white;
-}
-
-.quick-actions-card .card-body {
-    background: white;
-    border-radius: 0 0 15px 15px;
-}
-
-.quick-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px 20px;
-    background: white;
-    border-radius: 12px;
-    border: 2px solid #e9ecef;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    color: #2c3e50;
-    margin-bottom: 10px;
-}
-
-.quick-action-btn:hover {
-    background: #f8f9fa;
-    border-color: #00a896;
-    transform: translateX(5px);
-}
-
-.quick-action-btn i {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-}
-
-/* Appointments List */
-.appointments-card {
-    background: white;
+.stat-change {
+    display: inline-block;
+    padding: 4px 10px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.stat-change.positive {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stat-change.negative {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.stat-info {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+/* ========================================
+   TARJETAS DE ESTADÍSTICAS - MEJORADAS
+======================================== */
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
     border: none;
-}
-
-.appointments-card .card-header {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    color: white;
-    border-radius: 20px 20px 0 0;
-    padding: 1.5rem;
-}
-
-.appointments-list {
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 1rem;
-}
-
-.appointment-item {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
     display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 12px;
-    margin-bottom: 10px;
-    transition: all 0.3s ease;
-    border-left: 4px solid #00a896;
+    flex-direction: column;
 }
 
-.appointment-item:hover {
-    background: #e9ecef;
-    transform: translateX(5px);
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
 }
 
-/* Alerts Card */
-.alerts-card .card-header {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    color: white;
-    border-radius: 20px 20px 0 0;
-    padding: 1.5rem;
+.stat-card.stat-primary::before {
+    background: linear-gradient(90deg, #667eea, #764ba2);
 }
 
-.alert-item {
-    display: flex;
-    align-items: flex-start;
-    padding: 15px 20px;
-    border-bottom: 1px solid #f8f9fa;
-    transition: all 0.3s ease;
+.stat-card.stat-success::before {
+    background: linear-gradient(90deg, #f093fb, #f5576c);
 }
 
-.alert-item:hover {
-    background-color: #f8f9fa;
+.stat-card.stat-info::before {
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
 }
 
-.alert-item:last-child {
-    border-bottom: none;
+.stat-card.stat-warning::before {
+    background: linear-gradient(90deg, #fa709a, #fee140);
 }
 
-.alert-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card .stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 15px;
-    flex-shrink: 0;
-    font-size: 16px;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-primary .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
-.alert-urgent .alert-icon {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+.stat-success .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
 }
 
-.alert-reminder .alert-icon {
-    background: linear-gradient(135deg, #feca57, #ff9ff3);
+.stat-info .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
 }
 
-.alert-info .alert-icon {
-    background: linear-gradient(135deg, #48cae4, #0077b6);
+.stat-warning .stat-icon {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
 }
 
-.alert-content {
+.stat-card .stat-content {
     flex-grow: 1;
 }
 
-.alert-title {
+.stat-card .stat-content h3 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.stat-card .stat-content p {
+    color: #7f8c8d;
+    margin: 10px 0 15px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-change {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.stat-change.positive {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stat-change i {
+    margin-right: 4px;
+}
+
+.stat-info {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.stat-info i {
+    margin-right: 5px;
+}
+
+/* ========================================
+   ALERTAS
+======================================== */
+
+.alert {
+    border: none;
+    border-radius: 10px;
+    padding: 15px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.alert i {
+    font-size: 1.2rem;
+}
+
+/* ========================================
+   CARDS
+======================================== */
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.card-header {
+    background: white;
+    border-bottom: 2px solid #f5f7fa;
+    padding: 20px;
+}
+
+.card-header h5 {
     font-weight: 600;
     color: #2c3e50;
-    margin-bottom: 3px;
 }
 
-.alert-message {
-    font-size: 0.9rem;
-    color: #7f8c8d;
-    margin-bottom: 5px;
+.card-body {
+    padding: 20px;
 }
 
-.alert-time {
-    font-size: 0.8rem;
-    color: #bdc3c7;
-}
+/* ========================================
+   LISTA DE CONSULTAS
+======================================== */
 
-
-/* Recent Activity */
-.activity-card {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+.list-group-item {
     border: none;
+    border-bottom: 1px solid #f5f7fa;
+    padding: 15px 20px;
+    transition: all 0.2s;
 }
 
-.activity-card .card-header {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    color: white;
-    border-radius: 20px 20px 0 0;
-    padding: 1.5rem;
-}
-
-.activity-list {
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 1rem;
-}
-
-.activity-item {
-    display: flex;
-    gap: 15px;
-    padding: 12px;
-    border-bottom: 1px solid #f1f1f1;
-}
-
-.activity-item:last-child {
+.list-group-item:last-child {
     border-bottom: none;
 }
 
-.activity-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-    background: #e9ecef;
-    color: #495057;
+.list-group-item:hover {
+    background: #f8f9fa;
+    transform: translateX(5px);
 }
 
-/* Scrollbar */
-.appointments-list::-webkit-scrollbar,
-.activity-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.appointments-list::-webkit-scrollbar-track,
-.activity-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.appointments-list::-webkit-scrollbar-thumb,
-.activity-list::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-    border-radius: 10px;
-}
-
-/* Badges */
-.badge {
-    font-weight: 500;
-    font-size: 0.75rem;
+.time-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
+.list-group-item h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+}
+
+.list-group-item small {
+    color: #7f8c8d;
+}
+
+/* ========================================
+   BADGES DE ESTADO
+======================================== */
+
+.badge {
+    padding: 6px 12px;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.badge.bg-programada,
+.badge.bg-primary {
+    background: #3498db !important;
+}
+
+.badge.bg-completada,
 .badge.bg-success {
-    background: linear-gradient(135deg, #00a896 0%, #028090 100%) !important;
+    background: #2ecc71 !important;
 }
 
+.badge.bg-cancelada,
+.badge.bg-danger {
+    background: #e74c3c !important;
+}
+
+.badge.bg-en_curso,
 .badge.bg-warning {
-    background: linear-gradient(135deg, #ffd166 0%, #f4a261 100%) !important;
+    background: #f39c12 !important;
 }
 
-.badge.bg-secondary {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+/* ========================================
+   BOTONES DE ACCIONES RÁPIDAS
+======================================== */
+
+.btn {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
+    border: none;
 }
 
-/* Responsive */
-@media (max-width: 992px) {
-    .stats-card {
-        margin-bottom: 1rem;
-    }
-    
-    .quick-action-btn {
-        font-size: 0.9rem;
-    }
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+/* ========================================
+   GRÁFICAS
+======================================== */
+
+canvas {
+    max-height: 300px;
+}
+
+/* ========================================
+   ESTADOS VACÍOS
+======================================== */
+
+.text-center.py-5 i,
+.text-center.py-4 i {
+    opacity: 0.3;
+}
+
+/* ========================================
+   RESPONSIVE
+======================================== */
 
 @media (max-width: 768px) {
-    .stats-number {
-        font-size: 2.5rem;
+    .dashboard-container {
+        padding: 15px;
     }
-    
-    .appointments-list,
-    .activity-list {
-        max-height: 300px;
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
     }
+
+    .stat-card {
+        margin-bottom: 15px;
+    }
+
+    .stat-card .stat-content h3 {
+        font-size: 2rem;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .stat-card .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .stat-card .stat-content h3 {
+        font-size: 1.8rem;
+    }
+}
+
+/* ========================================
+   ANIMACIONES
+======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-card,
+.card,
+.alert {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ========================================
+   MEJORAS VISUALES
+======================================== */
+
+/* Scroll suave */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Links sin subrayado por defecto */
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+/* Mejora de contraste en textos */
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Sombras consistentes */
+.shadow-sm {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.shadow {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
 }

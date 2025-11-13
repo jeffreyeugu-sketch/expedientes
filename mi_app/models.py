@@ -277,6 +277,8 @@ def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, 'profile'):
         instance.profile.save()
 
+# Al final de models.py, después de todos tus modelos existentes
+
 class Payment(models.Model):
     """Modelo para pagos de consultas"""
     
@@ -304,7 +306,6 @@ class Payment(models.Model):
         verbose_name="Consulta"
     )
     
-    # Montos
     monto_total = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
@@ -323,7 +324,6 @@ class Payment(models.Model):
         verbose_name="Descuento"
     )
     
-    # Información del pago
     metodo_pago = models.CharField(
         max_length=20, 
         choices=METODO_PAGO_CHOICES,
@@ -336,7 +336,6 @@ class Payment(models.Model):
         verbose_name="Estado"
     )
     
-    # Detalles adicionales
     referencia = models.CharField(
         max_length=100, 
         blank=True,
@@ -347,7 +346,6 @@ class Payment(models.Model):
         verbose_name="Notas"
     )
     
-    # Fechas
     fecha_pago = models.DateTimeField(
         null=True, 
         blank=True,
@@ -372,16 +370,14 @@ class Payment(models.Model):
     
     @property
     def saldo_pendiente(self):
-        """Calcula el saldo pendiente"""
         return self.monto_total - self.descuento - self.monto_pagado
     
     @property
     def monto_final(self):
-        """Monto total menos descuento"""
         return self.monto_total - self.descuento
     
     def marcar_como_pagado(self):
-        """Marca el pago como completado"""
+        from django.utils import timezone
         self.estado = 'pagado'
         self.monto_pagado = self.monto_final
         if not self.fecha_pago:
@@ -405,7 +401,6 @@ class Invoice(models.Model):
         verbose_name="Pago"
     )
     
-    # Información fiscal
     folio = models.CharField(
         max_length=50,
         unique=True,
@@ -418,7 +413,6 @@ class Invoice(models.Model):
         verbose_name="Tipo de Comprobante"
     )
     
-    # Datos del paciente/cliente
     cliente_nombre = models.CharField(
         max_length=200,
         verbose_name="Nombre del Cliente"
@@ -437,7 +431,6 @@ class Invoice(models.Model):
         verbose_name="Email"
     )
     
-    # Desglose
     subtotal = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -455,7 +448,6 @@ class Invoice(models.Model):
         verbose_name="Total"
     )
     
-    # Control
     fecha_emision = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Fecha de Emisión"
@@ -483,7 +475,7 @@ class Invoice(models.Model):
         return f"Factura {self.folio} - {self.cliente_nombre}"
     
     def cancelar(self, motivo):
-        """Cancela la factura"""
+        from django.utils import timezone
         self.cancelada = True
         self.fecha_cancelacion = timezone.now()
         self.motivo_cancelacion = motivo
@@ -527,6 +519,5 @@ class ConceptoFactura(models.Model):
         return f"{self.descripcion} - ${self.importe}"
     
     def save(self, *args, **kwargs):
-        """Calcula el importe automáticamente"""
         self.importe = self.cantidad * self.precio_unitario
         super().save(*args, **kwargs)
