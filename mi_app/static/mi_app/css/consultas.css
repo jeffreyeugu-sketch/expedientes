@@ -319,3 +319,45 @@
         gap: 0.5rem;
     }
 }
+
+/* Estilos para badges de pago */
+.consulta-badges {
+    min-width: 120px;
+}
+
+.consulta-badges .badge {
+    font-size: 0.75rem;
+    padding: 0.4em 0.8em;
+    white-space: nowrap;
+}
+
+.consulta-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.time-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.list-group-item {
+    border-left: 4px solid transparent;
+    transition: all 0.2s;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    border-left-color: #3498db;
+}
+
+.consulta-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}

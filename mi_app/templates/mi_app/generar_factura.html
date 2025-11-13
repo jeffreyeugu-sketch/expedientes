@@ -1,0 +1,143 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block title %}Generar Factura{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/pagos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-file-invoice me-2"></i>Generar Factura</h2>
+                    <p class="text-muted mb-0">Pago #{{ pago.id }}</p>
+                </div>
+                <a href="{% url 'lista_pagos' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+
+            <!-- Información del Pago -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Pago</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Monto Total:</strong> ${{ pago.monto_total|floatformat:2 }}</p>
+                            <p><strong>Descuento:</strong> ${{ pago.descuento|floatformat:2 }}</p>
+                            <p><strong>Monto Final:</strong> ${{ pago.monto_final|floatformat:2 }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Método de Pago:</strong> {{ pago.get_metodo_pago_display }}</p>
+                            <p><strong>Fecha:</strong> {{ pago.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge bg-success">{{ pago.get_estado_display }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Factura -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Datos del Cliente</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Nombre o Razón Social *</label>
+                                <input type="text" class="form-control" name="cliente_nombre" 
+                                       value="{{ paciente.nombre_completo }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">RFC</label>
+                                <input type="text" class="form-control" name="cliente_rfc" 
+                                       maxlength="13" placeholder="XAXX010101000">
+                                <small class="text-muted">Opcional - Formato: 13 caracteres</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="cliente_email" 
+                                       value="{{ paciente.email }}" placeholder="correo@ejemplo.com">
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Dirección Fiscal</label>
+                                <textarea class="form-control" name="cliente_direccion" rows="2"
+                                          placeholder="Calle, número, colonia, CP, ciudad, estado">{{ paciente.direccion }}</textarea>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo de Comprobante *</label>
+                                <select class="form-select" name="tipo_comprobante" required>
+                                    <option value="recibo">Recibo Simple</option>
+                                    <option value="factura">Factura (CFDI)</option>
+                                    <option value="nota">Nota de Venta</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de Facturación -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Resumen de Facturación</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p><strong>Concepto:</strong> Consulta médica - {{ pago.consultation.get_tipo_consulta_display }}</p>
+                                <p><strong>Paciente:</strong> {{ pago.consultation.patient.nombre_completo }}</p>
+                                <p><strong>Fecha de Consulta:</strong> {{ pago.consultation.fecha_consulta|date:"d/m/Y" }}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="invoice-summary">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Subtotal:</span>
+                                        <strong>${{ pago.monto_final|floatformat:2 }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>IVA (16%):</span>
+                                        <strong>${{ pago.monto_final|floatformat:2|add:"0"|mul:"0.16"|floatformat:2 }}</strong>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Total:</strong>
+                                        <strong class="text-primary">
+                                            ${% widthratio pago.monto_final 1 1.16 %}
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'lista_pagos' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Generar Factura
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

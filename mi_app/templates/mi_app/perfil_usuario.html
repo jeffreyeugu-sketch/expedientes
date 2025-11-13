@@ -1,0 +1,165 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block page_title %}Mi Perfil{% endblock %}
+{% block page_subtitle %}Información personal y configuración{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/perfil.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Columna izquierda: Tarjeta de perfil -->
+    <div class="col-lg-4 mb-4">
+        <div class="card profile-card">
+            <div class="card-body text-center">
+                <div class="profile-avatar mb-3">
+                    <i class="fas fa-user-circle fa-5x"></i>
+                </div>
+                <h4 class="mb-1">{{ usuario.get_full_name|default:usuario.username }}</h4>
+                <p class="text-muted mb-2">@{{ usuario.username }}</p>
+                <span class="badge bg-info mb-3">{{ usuario.profile.get_rol_display }}</span>
+                
+                <hr>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-calendar-check text-success"></i>
+                        <div>
+                            <strong>Miembro desde</strong>
+                            <p class="text-muted">{{ usuario.date_joined|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="stat-item mt-3">
+                        <i class="fas fa-clock text-info"></i>
+                        <div>
+                            <strong>Último acceso</strong>
+                            <p class="text-muted">
+                                {% if usuario.last_login %}
+                                    {{ usuario.last_login|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    Primer acceso
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Columna derecha: Formulario de edición -->
+    <div class="col-lg-8">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Información Personal -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-user me-2"></i>Información Personal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombres</label>
+                            <input type="text" class="form-control" name="first_name" 
+                                   value="{{ usuario.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" name="last_name" 
+                                   value="{{ usuario.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" 
+                                   value="{{ usuario.email }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" name="telefono" 
+                                   value="{{ usuario.profile.telefono }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información Profesional -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-briefcase me-2"></i>Información Profesional
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rol</label>
+                            <input type="text" class="form-control" 
+                                   value="{{ usuario.profile.get_rol_display }}" disabled>
+                            <small class="text-muted">Contacta al administrador para cambiar tu rol</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cédula Profesional</label>
+                            <input type="text" class="form-control" name="cedula_profesional" 
+                                   value="{{ usuario.profile.cedula_profesional }}">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Especialidad</label>
+                            <input type="text" class="form-control" name="especialidad" 
+                                   value="{{ usuario.profile.especialidad }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cambiar Contraseña -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-lock me-2"></i>Cambiar Contraseña
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Deja estos campos en blanco si no deseas cambiar tu contraseña
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Contraseña Actual</label>
+                            <input type="password" class="form-control" name="password_actual" 
+                                   placeholder="Ingresa tu contraseña actual">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nueva Contraseña</label>
+                            <input type="password" class="form-control" name="password_nueva" 
+                                   placeholder="Nueva contraseña">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Confirmar Contraseña</label>
+                            <input type="password" class="form-control" name="password_confirmar" 
+                                   placeholder="Confirma la nueva contraseña">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

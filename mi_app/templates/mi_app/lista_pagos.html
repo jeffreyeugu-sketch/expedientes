@@ -1,0 +1,207 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block title %}Pagos y Facturación{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/pagos.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-money-bill-wave me-2"></i>Pagos y Facturación</h2>
+            <p class="text-muted mb-0">Gestión de pagos y facturas</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Total Pagos</p>
+                            <h3 class="mb-0">{{ stats.total_pagos }}</h3>
+                        </div>
+                        <div class="stat-icon bg-primary">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Monto Total</p>
+                            <h3 class="mb-0">${{ stats.monto_total|floatformat:2 }}</h3>
+                        </div>
+                        <div class="stat-icon bg-success">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Completados</p>
+                            <h3 class="mb-0">{{ stats.pagos_completados }}</h3>
+                        </div>
+                        <div class="stat-icon bg-info">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Pendientes</p>
+                            <h3 class="mb-0">{{ stats.pagos_pendientes }}</h3>
+                        </div>
+                        <div class="stat-icon bg-warning">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" name="estado">
+                        <option value="">Todos</option>
+                        <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                        <option value="pagado" {% if estado_filtro == 'pagado' %}selected{% endif %}>Pagado</option>
+                        <option value="parcial" {% if estado_filtro == 'parcial' %}selected{% endif %}>Pago Parcial</option>
+                        <option value="cancelado" {% if estado_filtro == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Método de Pago</label>
+                    <select class="form-select" name="metodo">
+                        <option value="">Todos</option>
+                        <option value="efectivo" {% if metodo_filtro == 'efectivo' %}selected{% endif %}>Efectivo</option>
+                        <option value="tarjeta" {% if metodo_filtro == 'tarjeta' %}selected{% endif %}>Tarjeta</option>
+                        <option value="transferencia" {% if metodo_filtro == 'transferencia' %}selected{% endif %}>Transferencia</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Desde</label>
+                    <input type="date" class="form-control" name="fecha_desde">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" class="form-control" name="fecha_hasta">
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Pagos -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Paciente</th>
+                            <th>Consulta</th>
+                            <th>Monto Total</th>
+                            <th>Pagado</th>
+                            <th>Saldo</th>
+                            <th>Método</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                            <td><strong>#{{ pago.id }}</strong></td>
+                            <td>{{ pago.consultation.patient.nombre_completo }}</td>
+                            <td>
+                                <a href="{% url 'detalle_consulta' pago.consultation.id %}">
+                                    Consulta #{{ pago.consultation.id }}
+                                </a>
+                            </td>
+                            <td>${{ pago.monto_total|floatformat:2 }}</td>
+                            <td class="text-success">${{ pago.monto_pagado|floatformat:2 }}</td>
+                            <td class="text-warning">${{ pago.saldo_pendiente|floatformat:2 }}</td>
+                            <td>{{ pago.get_metodo_pago_display }}</td>
+                            <td>
+                                {% if pago.estado == 'pagado' %}
+                                <span class="badge bg-success">Pagado</span>
+                                {% elif pago.estado == 'pendiente' %}
+                                <span class="badge bg-warning">Pendiente</span>
+                                {% elif pago.estado == 'parcial' %}
+                                <span class="badge bg-info">Parcial</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ pago.get_estado_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ pago.fecha_creacion|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if pago.factura %}
+                                <a href="{% url 'detalle_factura' pago.factura.id %}" 
+                                   class="btn btn-sm btn-outline-primary" title="Ver Factura">
+                                    <i class="fas fa-file-invoice"></i>
+                                </a>
+                                {% else %}
+                                <a href="{% url 'generar_factura' pago.id %}" 
+                                   class="btn btn-sm btn-outline-success" title="Generar Factura">
+                                    <i class="fas fa-plus"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No hay pagos registrados</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

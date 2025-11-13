@@ -2,7 +2,8 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils import timezone
-from datetime import date
+from datetime import date, timedelta
+from django.contrib.auth.models import User
 
 class Doctor(models.Model):
     """Modelo para doctores/médicos"""
@@ -57,39 +58,40 @@ class Patient(models.Model):
     apellidos = models.CharField(max_length=100, verbose_name="Apellidos")
     fecha_nacimiento = models.DateField(verbose_name="Fecha de Nacimiento")
     genero = models.CharField(max_length=20, choices=GENERO_CHOICES, verbose_name="Género")
-    estado_civil = models.CharField(max_length=20, choices=ESTADO_CIVIL_CHOICES, blank=True, verbose_name="Estado Civil")
-    ocupacion = models.CharField(max_length=100, blank=True, verbose_name="Ocupación")
-    documento_id = models.CharField(max_length=50, unique=True, verbose_name="Documento de Identidad")
-    direccion = models.TextField(blank=True, verbose_name="Dirección")
+    estado_civil = models.CharField(max_length=20, choices=ESTADO_CIVIL_CHOICES, verbose_name="Estado Civil")
     
-    # Información médica
-    tipo_sangre = models.CharField(max_length=11, choices=TIPO_SANGRE_CHOICES, blank=True, verbose_name="Tipo de Sangre")
+    # Información médica básica
+    tipo_sangre = models.CharField(max_length=15, choices=TIPO_SANGRE_CHOICES, verbose_name="Tipo de Sangre")
     peso = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Peso (kg)")
-    altura = models.IntegerField(null=True, blank=True, verbose_name="Altura (cm)")
+    altura = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Altura (m)")
     alergias = models.TextField(blank=True, verbose_name="Alergias")
-    medicamentos_actuales = models.TextField(blank=True, verbose_name="Medicamentos Actuales")
     enfermedades_cronicas = models.TextField(blank=True, verbose_name="Enfermedades Crónicas")
+    medicamentos_actuales = models.TextField(blank=True, verbose_name="Medicamentos Actuales")
     antecedentes_familiares = models.TextField(blank=True, verbose_name="Antecedentes Familiares")
-    fuma = models.CharField(max_length=10, choices=[('si', 'Sí'), ('no', 'No'), ('ocasional', 'Ocasional')], blank=True)
-    alcohol = models.CharField(max_length=10, choices=[('si', 'Sí'), ('no', 'No'), ('ocasional', 'Ocasional')], blank=True)
     
-    # Contacto
-    telefono_principal = models.CharField(max_length=20, verbose_name="Teléfono Principal")
+    # Información de contacto
+    calle = models.CharField(max_length=200, verbose_name="Calle", default='Sin especificar')
+    numero = models.CharField(max_length=20, verbose_name="Número", default='S/N')
+    colonia = models.CharField(max_length=100, verbose_name="Colonia", default='Sin especificar')
+    ciudad = models.CharField(max_length=100, verbose_name="Ciudad", default='Sin especificar')
+    estado = models.CharField(max_length=100, verbose_name="Estado", default='Sin especificar')
+    codigo_postal = models.CharField(max_length=10, verbose_name="Código Postal", default='00000')
+    telefono_principal = models.CharField(max_length=20, verbose_name="Teléfono Principal", default='0000000000')
     telefono_alternativo = models.CharField(max_length=20, blank=True, verbose_name="Teléfono Alternativo")
     email = models.EmailField(blank=True, verbose_name="Email")
     email_alternativo = models.EmailField(blank=True, verbose_name="Email Alternativo")
-    
+
     # Contacto de emergencia
-    emergencia_nombre = models.CharField(max_length=100, verbose_name="Contacto de Emergencia")
-    emergencia_parentesco = models.CharField(max_length=50, verbose_name="Parentesco")
-    emergencia_telefono = models.CharField(max_length=20, verbose_name="Teléfono de Emergencia")
+    emergencia_nombre = models.CharField(max_length=100, verbose_name="Contacto de Emergencia", default='Sin especificar')
+    emergencia_parentesco = models.CharField(max_length=50, verbose_name="Parentesco", default='Sin especificar')
+    emergencia_telefono = models.CharField(max_length=20, verbose_name="Teléfono de Emergencia", default='0000000000')
     emergencia_telefono2 = models.CharField(max_length=20, blank=True, verbose_name="Teléfono Emergencia 2")
     
-    # Seguro médico
+    # Información del seguro
     seguro_medico = models.CharField(max_length=100, blank=True, verbose_name="Seguro Médico")
     numero_poliza = models.CharField(max_length=50, blank=True, verbose_name="Número de Póliza")
     
-    # Control interno
+    # Control
     activo = models.BooleanField(default=True, verbose_name="Activo")
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
     fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
@@ -100,7 +102,7 @@ class Patient(models.Model):
         ordering = ['apellidos', 'nombres']
         
     def __str__(self):
-        return f"{self.nombres} {self.apellidos}"
+        return f"{self.apellidos}, {self.nombres}"
     
     @property
     def nombre_completo(self):
@@ -108,20 +110,30 @@ class Patient(models.Model):
     
     @property
     def edad(self):
-        today = date.today()
-        return today.year - self.fecha_nacimiento.year - ((today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day))
+        """Calcula la edad actual del paciente"""
+        hoy = date.today()
+        edad = hoy.year - self.fecha_nacimiento.year
+        if hoy.month < self.fecha_nacimiento.month or (hoy.month == self.fecha_nacimiento.month and hoy.day < self.fecha_nacimiento.day):
+            edad -= 1
+        return edad
     
     @property
-    def estado_paciente(self):
-        """Determina si el paciente está activo, nuevo, etc."""
-        from datetime import timedelta, date
-        
+    def direccion_completa(self):
+        """Retorna la dirección completa en formato legible"""
+        return f"{self.calle} {self.numero}, {self.colonia}, {self.ciudad}, {self.estado} {self.codigo_postal}"
+    
+    @property
+    def imc(self):
+        """Calcula el Índice de Masa Corporal"""
+        if self.peso and self.altura:
+            return round(float(self.peso) / (float(self.altura) ** 2), 2)
+        return None
+    
+    def get_estado_badge(self):
+        """Retorna el estado del paciente para badges"""
         hoy = date.today()
-        
-        # Si es nuevo (registrado hace menos de 30 días)
         if self.fecha_registro.date() > hoy - timedelta(days=30):
             return 'nuevo'
-        
         return 'activo'
 
 class Consultation(models.Model):
@@ -150,7 +162,7 @@ class Consultation(models.Model):
     motivo = models.TextField(verbose_name="Motivo de la Consulta")
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='programada', verbose_name="Estado")
     
-    # Información clínica (se llena durante/después de la consulta)
+    # Información clínica
     sintomas = models.TextField(blank=True, verbose_name="Síntomas")
     exploracion_fisica = models.TextField(blank=True, verbose_name="Exploración Física")
     diagnostico = models.TextField(blank=True, verbose_name="Diagnóstico")
@@ -185,7 +197,7 @@ class MedicalRecord(models.Model):
     hospitalizaciones = models.TextField(blank=True, verbose_name="Hospitalizaciones")
     traumatismos = models.TextField(blank=True, verbose_name="Traumatismos")
     
-    # Antecedentes gineco-obstétricos (para mujeres)
+    # Antecedentes gineco-obstétricos
     menarquia = models.CharField(max_length=50, blank=True, verbose_name="Menarquía")
     ciclo_menstrual = models.CharField(max_length=100, blank=True, verbose_name="Ciclo Menstrual")
     embarazos = models.IntegerField(null=True, blank=True, verbose_name="Embarazos")
@@ -205,7 +217,6 @@ class MedicalRecord(models.Model):
         
     def __str__(self):
         return f"Expediente de {self.patient.nombre_completo}"
-    
 
 class Prescription(models.Model):
     """Modelo para recetas médicas"""
@@ -225,3 +236,288 @@ class Prescription(models.Model):
         
     def __str__(self):
         return f"{self.medicamento} - {self.consultation.patient.nombre_completo}"
+
+class UserProfile(models.Model):
+    """Perfil extendido de usuario"""
+    ROLES = [
+        ('admin', 'Administrador'),
+        ('doctor', 'Doctor'),
+        ('enfermero', 'Enfermero'),
+        ('recepcionista', 'Recepcionista'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    rol = models.CharField(max_length=20, choices=ROLES, default='doctor')
+    cedula_profesional = models.CharField(max_length=20, blank=True, null=True)
+    especialidad = models.CharField(max_length=100, blank=True, null=True)
+    telefono = models.CharField(max_length=20, blank=True, null=True)
+    foto_perfil = models.CharField(max_length=255, blank=True, null=True)
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'user_profiles'
+        verbose_name = 'Perfil de Usuario'
+        verbose_name_plural = 'Perfiles de Usuario'
+    
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.get_rol_display()}"
+
+# Señales para crear perfil automáticamente
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+
+# Al final de models.py, después de todos tus modelos existentes
+
+class Payment(models.Model):
+    """Modelo para pagos de consultas"""
+    
+    METODO_PAGO_CHOICES = [
+        ('efectivo', 'Efectivo'),
+        ('tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('transferencia', 'Transferencia Bancaria'),
+        ('cheque', 'Cheque'),
+        ('paypal', 'PayPal'),
+        ('otro', 'Otro'),
+    ]
+    
+    ESTADO_PAGO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('pagado', 'Pagado'),
+        ('parcial', 'Pago Parcial'),
+        ('cancelado', 'Cancelado'),
+        ('reembolsado', 'Reembolsado'),
+    ]
+    
+    consultation = models.ForeignKey(
+        Consultation, 
+        on_delete=models.CASCADE, 
+        related_name='pagos',
+        verbose_name="Consulta"
+    )
+    
+    monto_total = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        verbose_name="Monto Total"
+    )
+    monto_pagado = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Monto Pagado"
+    )
+    descuento = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="Descuento"
+    )
+    
+    metodo_pago = models.CharField(
+        max_length=20, 
+        choices=METODO_PAGO_CHOICES,
+        verbose_name="Método de Pago"
+    )
+    estado = models.CharField(
+        max_length=20, 
+        choices=ESTADO_PAGO_CHOICES, 
+        default='pendiente',
+        verbose_name="Estado"
+    )
+    
+    referencia = models.CharField(
+        max_length=100, 
+        blank=True,
+        verbose_name="Referencia/Folio"
+    )
+    notas = models.TextField(
+        blank=True,
+        verbose_name="Notas"
+    )
+    
+    fecha_pago = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Fecha de Pago"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Creación"
+    )
+    fecha_actualizacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última Actualización"
+    )
+    
+    class Meta:
+        verbose_name = "Pago"
+        verbose_name_plural = "Pagos"
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"Pago #{self.id} - {self.consultation.patient.nombre_completo}"
+    
+    @property
+    def saldo_pendiente(self):
+        return self.monto_total - self.descuento - self.monto_pagado
+    
+    @property
+    def monto_final(self):
+        return self.monto_total - self.descuento
+    
+    def marcar_como_pagado(self):
+        from django.utils import timezone
+        self.estado = 'pagado'
+        self.monto_pagado = self.monto_final
+        if not self.fecha_pago:
+            self.fecha_pago = timezone.now()
+        self.save()
+
+
+class Invoice(models.Model):
+    """Modelo para facturas"""
+    
+    TIPO_COMPROBANTE_CHOICES = [
+        ('factura', 'Factura (CFDI)'),
+        ('recibo', 'Recibo Simple'),
+        ('nota', 'Nota de Venta'),
+    ]
+    
+    payment = models.OneToOneField(
+        Payment,
+        on_delete=models.CASCADE,
+        related_name='factura',
+        verbose_name="Pago"
+    )
+    
+    folio = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="Folio"
+    )
+    tipo_comprobante = models.CharField(
+        max_length=20,
+        choices=TIPO_COMPROBANTE_CHOICES,
+        default='recibo',
+        verbose_name="Tipo de Comprobante"
+    )
+    
+    cliente_nombre = models.CharField(
+        max_length=200,
+        verbose_name="Nombre del Cliente"
+    )
+    cliente_rfc = models.CharField(
+        max_length=13,
+        blank=True,
+        verbose_name="RFC"
+    )
+    cliente_direccion = models.TextField(
+        blank=True,
+        verbose_name="Dirección"
+    )
+    cliente_email = models.EmailField(
+        blank=True,
+        verbose_name="Email"
+    )
+    
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Subtotal"
+    )
+    iva = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="IVA"
+    )
+    total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Total"
+    )
+    
+    fecha_emision = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Emisión"
+    )
+    cancelada = models.BooleanField(
+        default=False,
+        verbose_name="Cancelada"
+    )
+    fecha_cancelacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Cancelación"
+    )
+    motivo_cancelacion = models.TextField(
+        blank=True,
+        verbose_name="Motivo de Cancelación"
+    )
+    
+    class Meta:
+        verbose_name = "Factura"
+        verbose_name_plural = "Facturas"
+        ordering = ['-fecha_emision']
+    
+    def __str__(self):
+        return f"Factura {self.folio} - {self.cliente_nombre}"
+    
+    def cancelar(self, motivo):
+        from django.utils import timezone
+        self.cancelada = True
+        self.fecha_cancelacion = timezone.now()
+        self.motivo_cancelacion = motivo
+        self.save()
+
+
+class ConceptoFactura(models.Model):
+    """Conceptos/items de una factura"""
+    
+    factura = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='conceptos',
+        verbose_name="Factura"
+    )
+    
+    cantidad = models.IntegerField(
+        default=1,
+        verbose_name="Cantidad"
+    )
+    descripcion = models.CharField(
+        max_length=500,
+        verbose_name="Descripción"
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Precio Unitario"
+    )
+    importe = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Importe"
+    )
+    
+    class Meta:
+        verbose_name = "Concepto de Factura"
+        verbose_name_plural = "Conceptos de Factura"
+    
+    def __str__(self):
+        return f"{self.descripcion} - ${self.importe}"
+    
+    def save(self, *args, **kwargs):
+        self.importe = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)

@@ -1,0 +1,103 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block nav_configuracion %}active{% endblock %}
+
+{% block page_title %}Nuevo Usuario{% endblock %}
+{% block page_subtitle %}Registrar nuevo usuario en el sistema{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/usuarios.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Datos de Acceso
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre de Usuario *</label>
+                            <input type="text" class="form-control" name="username" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Contraseña *</label>
+                            <input type="password" class="form-control" name="password" required>
+                            <small class="text-muted">Mínimo 8 caracteres</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card me-2"></i>Información Personal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" name="telefono">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rol *</label>
+                            <select class="form-select" name="rol" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="admin">Administrador</option>
+                                <option value="doctor">Doctor</option>
+                                <option value="enfermero">Enfermero</option>
+                                <option value="recepcionista">Recepcionista</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cédula Profesional</label>
+                            <input type="text" class="form-control" name="cedula_profesional">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Especialidad</label>
+                            <input type="text" class="form-control" name="especialidad">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Crear Usuario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

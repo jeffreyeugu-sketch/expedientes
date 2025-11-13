@@ -1,0 +1,114 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block nav_configuracion %}active{% endblock %}
+
+{% block page_title %}Editar Usuario{% endblock %}
+{% block page_subtitle %}Modificar información de {{ usuario.username }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/usuarios.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Datos de Acceso
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre de Usuario *</label>
+                            <input type="text" class="form-control" name="username" 
+                                   value="{{ usuario.username }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-control" name="email" 
+                                   value="{{ usuario.email }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Nueva Contraseña</label>
+                            <input type="password" class="form-control" name="password">
+                            <small class="text-muted">Dejar en blanco para mantener la actual</small>
+                        </div>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_active" 
+                               {% if usuario.is_active %}checked{% endif %}>
+                        <label class="form-check-label">Usuario Activo</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card me-2"></i>Información Personal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" name="first_name" 
+                                   value="{{ usuario.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" name="last_name" 
+                                   value="{{ usuario.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" name="telefono" 
+                                   value="{{ usuario.profile.telefono }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Rol *</label>
+                            <select class="form-select" name="rol" required>
+                                <option value="admin" {% if usuario.profile.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                                <option value="doctor" {% if usuario.profile.rol == 'doctor' %}selected{% endif %}>Doctor</option>
+                                <option value="enfermero" {% if usuario.profile.rol == 'enfermero' %}selected{% endif %}>Enfermero</option>
+                                <option value="recepcionista" {% if usuario.profile.rol == 'recepcionista' %}selected{% endif %}>Recepcionista</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Cédula Profesional</label>
+                            <input type="text" class="form-control" name="cedula_profesional" 
+                                   value="{{ usuario.profile.cedula_profesional }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Especialidad</label>
+                            <input type="text" class="form-control" name="especialidad" 
+                                   value="{{ usuario.profile.especialidad }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end">
+                <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

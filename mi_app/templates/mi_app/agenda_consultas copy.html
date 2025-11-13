@@ -1,0 +1,254 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block nav_consultas %}active{% endblock %}
+
+{% block page_title %}Agenda de Consultas{% endblock %}
+{% block page_subtitle %}Gestión de citas médicas - {{ fecha_hoy|date:"d/m/Y" }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/consultas.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Estadísticas del día -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card stats-total">
+            <div class="stats-icon">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-number">{{ total_hoy }}</div>
+                <div class="stats-label">Consultas Hoy</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card stats-success">
+            <div class="stats-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-number">{{ completadas_hoy }}</div>
+                <div class="stats-label">Completadas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card stats-warning">
+            <div class="stats-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stats-content">
+                <div class="stats-number">{{ pendientes_hoy }}</div>
+                <div class="stats-label">Pendientes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="action-card">
+            <a href="{% url 'nueva_consulta' %}" class="btn btn-success btn-lg w-100">
+                <i class="fas fa-plus me-2"></i>Nueva Consulta
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Consultas de Hoy -->
+<!-- Consultas de Hoy -->
+<div class="row">
+    <!-- Columna Izquierda: Agenda de Hoy -->
+    <div class="col-lg-8 mb-4">
+        <div class="card agenda-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-day me-2"></i>Agenda de Hoy
+                </h5>
+                <span class="badge bg-primary">{{ fecha_hoy|date:"l, d F Y" }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if consultas_hoy %}
+                    <div class="timeline">
+                        {% for consulta in consultas_hoy %}
+                        <div class="timeline-item consulta-item" data-estado="{{ consulta.estado }}">
+                            <!-- contenido de la consulta -->
+                            <div class="timeline-time">
+                                <div class="time">{{ consulta.fecha_consulta|date:"H:i" }}</div>
+                                <div class="duration">{{ consulta.duracion_estimada }} min</div>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="consulta-header">
+                                    <h6 class="patient-name">{{ consulta.patient.nombre_completo }}</h6>
+                                    <span class="badge status-{{ consulta.estado }}">{{ consulta.get_estado_display }}</span>
+                                </div>
+                                <div class="consulta-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-user-md me-2"></i>
+                                        <span>{{ consulta.doctor.nombre_completo }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-clipboard me-2"></i>
+                                        <span>{{ consulta.get_tipo_consulta_display }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-comment-medical me-2"></i>
+                                        <span>{{ consulta.motivo|truncatewords:8 }}</span>
+                                    </div>
+                                </div>
+                                <div class="consulta-actions">
+                                    <a href="{% url 'detalle_paciente' consulta.patient.id %}" class="btn btn-sm btn-outline-primary" title="Ver Paciente">
+                                        <i class="fas fa-user"></i>
+                                    </a>
+                                    <a href="{% url 'detalle_consulta' consulta.id %}" class="btn btn-sm btn-outline-success" title="Ver Consulta">
+                                        <i class="fas fa-stethoscope"></i>
+                                    </a>
+                                    {% if consulta.estado == 'programada' %}
+                                    <button class="btn btn-sm btn-outline-warning" onclick="marcarEnCurso({{ consulta.id }})" title="Iniciar Consulta">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <h6>No hay consultas programadas para hoy</h6>
+                        <p class="text-muted">¡Perfecto día para ponerse al día!</p>
+                        <a href="{% url 'nueva_consulta' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Programar Primera Consulta
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Próximas Consultas y Acciones Rápidas -->
+    <div class="col-lg-4">
+        <!-- Próximas Consultas -->
+        <div class="card proximas-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Próximas Consultas
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                {% if proximas_consultas %}
+                    <div class="proximas-list">
+                        {% for consulta in proximas_consultas %}
+                        <div class="proxima-item">
+                            <div class="proxima-date">
+                                <div class="day">{{ consulta.fecha_consulta|date:"d" }}</div>
+                                <div class="month">{{ consulta.fecha_consulta|date:"M" }}</div>
+                            </div>
+                            <div class="proxima-content">
+                                <div class="proxima-time">{{ consulta.fecha_consulta|date:"H:i" }}</div>
+                                <div class="proxima-patient">{{ consulta.patient.nombre_completo }}</div>
+                                <div class="proxima-type">{{ consulta.get_tipo_consulta_display }}</div>
+                            </div>
+                            <div class="proxima-actions">
+                                <a href="{% url 'detalle_consulta' consulta.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state-small">
+                        <i class="fas fa-calendar-check"></i>
+                        <p class="text-muted mb-0">No hay próximas consultas programadas</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="#" class="btn btn-sm btn-outline-primary">
+                    Ver Calendario Completo <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Widget de Acciones Rápidas -->
+        <div class="card quick-actions-card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'nueva_consulta' %}" class="btn btn-outline-success">
+                        <i class="fas fa-calendar-plus me-2"></i>Nueva Consulta
+                    </a>
+                    <a href="{% url 'nuevo_paciente' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus me-2"></i>Nuevo Paciente
+                    </a>
+                    <a href="{% url 'lista_pacientes' %}" class="btn btn-outline-info">
+                        <i class="fas fa-search me-2"></i>Buscar Paciente
+                    </a>
+                    <button class="btn btn-outline-warning" onclick="generarReporte()">
+                        <i class="fas fa-file-pdf me-2"></i>Reporte del Día
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Fin del row de dos columnas -->
+
+<!-- Modal para cambiar estado -->
+<div class="modal fade" id="estadoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cambiar Estado de Consulta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Marcar consulta como "En Curso"?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmarCambioEstado()">Iniciar Consulta</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let consultaSeleccionada = null;
+
+function marcarEnCurso(consultaId) {
+    consultaSeleccionada = consultaId;
+    const modal = new bootstrap.Modal(document.getElementById('estadoModal'));
+    modal.show();
+}
+
+function confirmarCambioEstado() {
+    if (consultaSeleccionada) {
+        // Aquí harías la llamada AJAX para cambiar el estado
+        console.log('Cambiando estado de consulta:', consultaSeleccionada);
+        // Por ahora, solo simulamos
+        location.reload();
+    }
+}
+
+function generarReporte() {
+    console.log('Generando reporte del día...');
+    // Implementar funcionalidad de reporte
+}
+
+// Actualizar la página cada 5 minutos para mantener la agenda fresca
+setInterval(function() {
+    location.reload();
+}, 300000); // 5 minutos
+
+console.log('Agenda de consultas cargada');
+</script>
+{% endblock %}

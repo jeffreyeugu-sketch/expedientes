@@ -57,145 +57,114 @@
 
 <!-- Consultas de Hoy -->
 <!-- Consultas de Hoy -->
-<div class="row">
-    <!-- Columna Izquierda: Agenda de Hoy -->
-    <div class="col-lg-8 mb-4">
-        <div class="card agenda-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-calendar-day me-2"></i>Agenda de Hoy
-                </h5>
-                <span class="badge bg-primary">{{ fecha_hoy|date:"l, d F Y" }}</span>
-            </div>
-            <div class="card-body p-0">
-                {% if consultas_hoy %}
-                    <div class="timeline">
-                        {% for consulta in consultas_hoy %}
-                        <div class="timeline-item consulta-item" data-estado="{{ consulta.estado }}">
-                            <!-- contenido de la consulta -->
-                            <div class="timeline-time">
-                                <div class="time">{{ consulta.fecha_consulta|date:"H:i" }}</div>
-                                <div class="duration">{{ consulta.duracion_estimada }} min</div>
-                            </div>
-                            <div class="timeline-content">
-                                <div class="consulta-header">
-                                    <h6 class="patient-name">{{ consulta.patient.nombre_completo }}</h6>
-                                    <span class="badge status-{{ consulta.estado }}">{{ consulta.get_estado_display }}</span>
-                                </div>
-                                <div class="consulta-details">
-                                    <div class="detail-item">
-                                        <i class="fas fa-user-md me-2"></i>
-                                        <span>{{ consulta.doctor.nombre_completo }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <i class="fas fa-clipboard me-2"></i>
-                                        <span>{{ consulta.get_tipo_consulta_display }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <i class="fas fa-comment-medical me-2"></i>
-                                        <span>{{ consulta.motivo|truncatewords:8 }}</span>
-                                    </div>
-                                </div>
-                                <div class="consulta-actions">
-                                    <a href="{% url 'detalle_paciente' consulta.patient.id %}" class="btn btn-sm btn-outline-primary" title="Ver Paciente">
-                                        <i class="fas fa-user"></i>
-                                    </a>
-                                    <a href="{% url 'detalle_consulta' consulta.id %}" class="btn btn-sm btn-outline-success" title="Ver Consulta">
-                                        <i class="fas fa-stethoscope"></i>
-                                    </a>
-                                    {% if consulta.estado == 'programada' %}
-                                    <button class="btn btn-sm btn-outline-warning" onclick="marcarEnCurso({{ consulta.id }})" title="Iniciar Consulta">
-                                        <i class="fas fa-play"></i>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-state">
-                        <i class="fas fa-calendar-times"></i>
-                        <h6>No hay consultas programadas para hoy</h6>
-                        <p class="text-muted">¡Perfecto día para ponerse al día!</p>
-                        <a href="{% url 'nueva_consulta' %}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Programar Primera Consulta
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+<!-- Consultas de Hoy -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-day me-2"></i>Consultas de Hoy
+            <span class="badge bg-primary ms-2">{{ total_hoy }}</span>
+        </h5>
     </div>
-
-    <!-- Columna Derecha: Próximas Consultas y Acciones Rápidas -->
-    <div class="col-lg-4">
-        <!-- Próximas Consultas -->
-        <div class="card proximas-card mb-4">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="fas fa-calendar-alt me-2"></i>Próximas Consultas
-                </h6>
-            </div>
-            <div class="card-body p-0">
-                {% if proximas_consultas %}
-                    <div class="proximas-list">
-                        {% for consulta in proximas_consultas %}
-                        <div class="proxima-item">
-                            <div class="proxima-date">
-                                <div class="day">{{ consulta.fecha_consulta|date:"d" }}</div>
-                                <div class="month">{{ consulta.fecha_consulta|date:"M" }}</div>
+    <div class="card-body p-0">
+        {% if consultas_hoy %}
+            <div class="list-group list-group-flush">
+                {% for consulta in consultas_hoy %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="time-badge">{{ consulta.fecha_consulta|date:"H:i" }}</span>
+                                <h6 class="mb-0 ms-3">{{ consulta.patient.nombre_completo }}</h6>
                             </div>
-                            <div class="proxima-content">
-                                <div class="proxima-time">{{ consulta.fecha_consulta|date:"H:i" }}</div>
-                                <div class="proxima-patient">{{ consulta.patient.nombre_completo }}</div>
-                                <div class="proxima-type">{{ consulta.get_tipo_consulta_display }}</div>
-                            </div>
-                            <div class="proxima-actions">
-                                <a href="{% url 'detalle_consulta' consulta.id %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </a>
+                            <div class="consulta-info">
+                                <small class="text-muted">
+                                    <i class="fas fa-user-md me-1"></i>{{ consulta.doctor.nombre_completo }}
+                                </small>
+                                <small class="text-muted ms-3">
+                                    <i class="fas fa-stethoscope me-1"></i>{{ consulta.get_tipo_consulta_display }}
+                                </small>
                             </div>
                         </div>
-                        {% endfor %}
+                        
+                        <!-- Badges de estado y pago -->
+                        <div class="consulta-badges d-flex flex-column align-items-end gap-2">
+                            <!-- Badge de estado de consulta -->
+                            {% if consulta.estado == 'programada' %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-clock me-1"></i>Programada
+                            </span>
+                            {% elif consulta.estado == 'en_curso' %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-spinner me-1"></i>En Curso
+                            </span>
+                            {% elif consulta.estado == 'completada' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Completada
+                            </span>
+                            {% elif consulta.estado == 'cancelada' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-times me-1"></i>Cancelada
+                            </span>
+                            {% endif %}
+                            
+                            <!-- Badge de estado de pago -->
+                            {% if consulta.pagos.exists %}
+                                {% with consulta.pagos.first as pago %}
+                                    {% if pago.estado == 'pagado' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Pagado
+                                    </span>
+                                    {% elif pago.estado == 'parcial' %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Pago Parcial
+                                    </span>
+                                    {% elif pago.estado == 'pendiente' %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-clock me-1"></i>Pago Pendiente
+                                    </span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% elif consulta.estado == 'completada' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-exclamation-circle me-1"></i>Sin Pago
+                            </span>
+                            {% endif %}
+                        </div>
                     </div>
-                {% else %}
-                    <div class="empty-state-small">
-                        <i class="fas fa-calendar-check"></i>
-                        <p class="text-muted mb-0">No hay próximas consultas programadas</p>
+                    
+                    <!-- Botones de acción -->
+                    <div class="consulta-actions mt-2">
+                        <a href="{% url 'detalle_consulta' consulta.id %}" 
+                           class="btn btn-sm btn-outline-primary" title="Ver Detalle">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        
+                        {% if consulta.estado == 'completada' and not consulta.pagos.exists %}
+                        <a href="{% url 'registrar_pago' consulta.id %}" 
+                           class="btn btn-sm btn-success" title="Registrar Pago">
+                            <i class="fas fa-dollar-sign"></i> Pagar
+                        </a>
+                        {% endif %}
+                        
+                        {% if consulta.estado == 'programada' %}
+                        <a href="{% url 'editar_consulta' consulta.id %}" 
+                           class="btn btn-sm btn-outline-secondary" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
                     </div>
-                {% endif %}
+                </div>
+                {% endfor %}
             </div>
-            <div class="card-footer text-center">
-                <a href="#" class="btn btn-sm btn-outline-primary">
-                    Ver Calendario Completo <i class="fas fa-arrow-right ms-1"></i>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No hay consultas programadas para hoy</p>
+                <a href="{% url 'nueva_consulta' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Agendar Consulta
                 </a>
             </div>
-        </div>
-
-        <!-- Widget de Acciones Rápidas -->
-        <div class="card quick-actions-card">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="fas fa-bolt me-2"></i>Acciones Rápidas
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{% url 'nueva_consulta' %}" class="btn btn-outline-success">
-                        <i class="fas fa-calendar-plus me-2"></i>Nueva Consulta
-                    </a>
-                    <a href="{% url 'nuevo_paciente' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-user-plus me-2"></i>Nuevo Paciente
-                    </a>
-                    <a href="{% url 'lista_pacientes' %}" class="btn btn-outline-info">
-                        <i class="fas fa-search me-2"></i>Buscar Paciente
-                    </a>
-                    <button class="btn btn-outline-warning" onclick="generarReporte()">
-                        <i class="fas fa-file-pdf me-2"></i>Reporte del Día
-                    </button>
-                </div>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 <!-- Fin del row de dos columnas -->

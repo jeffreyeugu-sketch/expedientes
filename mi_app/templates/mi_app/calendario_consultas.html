@@ -1,0 +1,384 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block title %}Calendario de Consultas{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/calendario.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-container">
+    <!-- Header compacto -->
+    <div class="calendar-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="fas fa-calendar-alt me-2"></i>Calendario de Consultas</h2>
+            </div>
+            <div class="calendar-actions">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaConsulta">
+                    <i class="fas fa-plus me-1"></i>Nueva
+                </button>
+                <a href="{% url 'agenda_consultas' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-1"></i>Lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <!-- Navegación del Calendario -->
+            <div class="calendar-nav">
+                <a href="?mes={{ mes_anterior }}&anio={{ anio_anterior }}" 
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h4>{{ mes_nombre|capfirst }} {{ anio }}</h4>
+                <a href="?mes={{ mes_siguiente }}&anio={{ anio_siguiente }}" 
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <button class="btn btn-primary btn-sm ms-2" onclick="irHoy()">
+                    <i class="fas fa-calendar-day me-1"></i>Hoy
+                </button>
+            </div>
+
+            <!-- Grilla del Calendario -->
+            <div class="calendar-grid">
+                <!-- ... resto del código ... -->
+                <div class="calendar-weekdays">
+                    <div class="weekday">Lun</div>
+                    <div class="weekday">Mar</div>
+                    <div class="weekday">Mié</div>
+                    <div class="weekday">Jue</div>
+                    <div class="weekday">Vie</div>
+                    <div class="weekday">Sáb</div>
+                    <div class="weekday">Dom</div>
+                </div>
+                
+                <div class="calendar-days" id="calendarDays">
+                    <!-- Se genera dinámicamente con JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <!-- Panel lateral -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Doctor</label>
+                        <select class="form-select" id="filtroDr" onchange="filtrarConsultas()">
+                            <option value="">Todos</option>
+                            {% for doctor in doctores %}
+                            <option value="{{ doctor.id }}">{{ doctor.nombre_completo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Estado</label>
+                        <select class="form-select" id="filtroEstado" onchange="filtrarConsultas()">
+                            <option value="">Todos</option>
+                            <option value="programada">Programada</option>
+                            <option value="completada">Completada</option>
+                            <option value="cancelada">Cancelada</option>
+                            <option value="en_curso">En Curso</option>
+                            <option value="no_asistio">No Asistió</option>
+                        </select>
+                    </div>
+        
+                    {% if doctor_filtro or estado_filtro %}
+                    <div class="filter-clear">
+                        <a href="?mes={{ mes }}&anio={{ anio }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-times me-1"></i>Limpiar Filtros
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Leyenda</h6>
+                </div>
+                <div class="card-body">
+                    <div class="legend-item">
+                        <span class="badge badge-programada"></span> Programada
+                    </div>
+                    <div class="legend-item">
+                        <span class="badge badge-completada"></span> Completada
+                    </div>
+                    <div class="legend-item">
+                        <span class="badge badge-cancelada"></span> Cancelada
+                    </div>
+                    <div class="legend-item">
+                        <span class="badge badge-en_curso"></span> En Curso
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Consulta Rápida -->
+<div class="modal fade" id="modalNuevaConsulta" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-calendar-plus me-2"></i>Agendar Consulta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'nueva_consulta' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="fechaSeleccionada" name="fecha">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Paciente *</label>
+                        <select class="form-select" name="patient_id" required>
+                            <option value="">Seleccionar...</option>
+                            {% for paciente in pacientes %}
+                            <option value="{{ paciente.id }}">{{ paciente.nombre_completo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Doctor *</label>
+                        <select class="form-select" name="doctor_id" required>
+                            {% for doctor in doctores %}
+                            <option value="{{ doctor.id }}">{{ doctor.nombre_completo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Fecha *</label>
+                            <input type="date" class="form-control" id="modalFecha" name="fecha" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Hora *</label>
+                            <input type="time" class="form-control" name="hora" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tipo *</label>
+                        <select class="form-select" name="tipo_consulta" required>
+                            <option value="general">Consulta General</option>
+                            <option value="seguimiento">Seguimiento</option>
+                            <option value="urgencia">Urgencia</option>
+                            <option value="control">Control</option>
+                            <option value="primera_vez">Primera Vez</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Motivo *</label>
+                        <textarea class="form-control" name="motivo" rows="2" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Agendar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle Día -->
+<div class="modal fade" id="modalDetalleDia" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloDetalleDia"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="contenidoDetalleDia">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const consultasPorDia = {{ consultas_por_dia|safe }};
+    const diasMes = {{ dias_mes }};
+    const primerDiaSemana = {{ primer_dia_semana }};
+    const hoy = new Date('{{ hoy|date:"Y-m-d" }}');
+    const mesActual = {{ mes }};
+    const anioActual = {{ anio }};
+
+    function generarCalendario() {
+        const container = document.getElementById('calendarDays');
+        container.innerHTML = '';
+
+        // Días vacíos antes del primer día del mes
+        for (let i = 0; i < primerDiaSemana; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'calendar-day empty';
+            container.appendChild(emptyDay);
+        }
+
+        // Días del mes
+        for (let dia = 1; dia <= diasMes; dia++) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'calendar-day';
+            
+            const fechaDia = new Date(anioActual, mesActual - 1, dia);
+            if (fechaDia.toDateString() === hoy.toDateString()) {
+                dayDiv.classList.add('today');
+            }
+            
+            const consultas = consultasPorDia[dia] || [];
+            if (consultas.length > 0) {
+                dayDiv.classList.add('has-events');
+            }
+            
+            dayDiv.innerHTML = `
+                <div class="day-number">${dia}</div>
+                <div class="day-events">
+                    ${consultas.slice(0, 3).map(c => `
+                        <div class="event event-${c.estado}" onclick="event.stopPropagation(); verConsulta(${c.id})">
+                            <span class="event-time">${c.hora}</span>
+                            <span class="event-patient">${c.paciente}</span>
+                        </div>
+                    `).join('')}
+                    ${consultas.length > 3 ? `<div class="event-more">+${consultas.length - 3} más</div>` : ''}
+                </div>
+            `;
+            
+            dayDiv.onclick = () => abrirDia(dia, consultas);
+            container.appendChild(dayDiv);
+        }
+    }
+
+    function abrirDia(dia, consultas) {
+        const fecha = `${dia} de ${document.querySelector('.calendar-nav h4').textContent}`;
+        document.getElementById('tituloDetalleDia').textContent = `Consultas - ${fecha}`;
+        
+        // Prellenar fecha en modal de nueva consulta
+        const fechaISO = `${anioActual}-${String(mesActual).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        document.getElementById('modalFecha').value = fechaISO;
+        document.getElementById('fechaSeleccionada').value = fechaISO;
+        
+        let html = '<div class="list-group">';
+        if (consultas.length === 0) {
+            html += `
+                <p class="text-muted text-center py-3">No hay consultas programadas</p>
+                <div class="text-center">
+                    <button class="btn btn-success" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalNuevaConsulta">
+                        <i class="fas fa-plus me-2"></i>Agendar Consulta
+                    </button>
+                </div>
+            `;
+        } else {
+            consultas.forEach(c => {
+                html += `
+                    <a href="/consultas/${c.id}/" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">${c.hora} - ${c.paciente}</h6>
+                                <small class="text-muted">${getTipoDisplay(c.tipo)}</small>
+                            </div>
+                            <span class="badge bg-${getBadgeColor(c.estado)}">${getEstadoDisplay(c.estado)}</span>
+                        </div>
+                    </a>
+                `;
+            });
+            html += `
+                <div class="text-center mt-3">
+                    <button class="btn btn-success btn-sm" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalNuevaConsulta">
+                        <i class="fas fa-plus me-2"></i>Agendar otra consulta
+                    </button>
+                </div>
+            `;
+        }
+        html += '</div>';
+        
+        document.getElementById('contenidoDetalleDia').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('modalDetalleDia')).show();
+    }
+
+    function getTipoDisplay(tipo) {
+        const tipos = {
+            'general': 'Consulta General',
+            'seguimiento': 'Seguimiento',
+            'urgencia': 'Urgencia',
+            'control': 'Control',
+            'primera_vez': 'Primera Vez'
+        };
+        return tipos[tipo] || tipo;
+    }
+
+    function getEstadoDisplay(estado) {
+        const estados = {
+            'programada': 'Programada',
+            'completada': 'Completada',
+            'cancelada': 'Cancelada',
+            'en_curso': 'En Curso',
+            'no_asistio': 'No Asistió'
+        };
+        return estados[estado] || estado;
+    }
+
+    function getBadgeColor(estado) {
+        const colores = {
+            'programada': 'primary',
+            'completada': 'success',
+            'cancelada': 'danger',
+            'en_curso': 'warning',
+            'no_asistio': 'secondary'
+        };
+        return colores[estado] || 'secondary';
+    }
+
+    function verConsulta(id) {
+        window.location.href = `/consultas/${id}/`;
+    }
+
+    function irHoy() {
+        window.location.href = '{% url "calendario_consultas" %}';
+    }
+
+    function filtrarConsultas() {
+        const filtroDr = document.getElementById('filtroDr').value;
+        const filtroEstado = document.getElementById('filtroEstado').value;
+        
+        // Construir URL con parámetros
+        const params = new URLSearchParams();
+        params.set('mes', mesActual);
+        params.set('anio', anioActual);
+        
+        if (filtroDr) params.set('doctor', filtroDr);
+        if (filtroEstado) params.set('estado', filtroEstado);
+        
+        window.location.href = '{% url "calendario_consultas" %}?' + params.toString();
+    }
+
+    // Generar calendario al cargar
+    document.addEventListener('DOMContentLoaded', function() {
+        generarCalendario();
+        
+        // Mantener valores de filtro seleccionados
+        {% if doctor_filtro %}
+        document.getElementById('filtroDr').value = '{{ doctor_filtro }}';
+        {% endif %}
+        
+        {% if estado_filtro %}
+        document.getElementById('filtroEstado').value = '{{ estado_filtro }}';
+        {% endif %}
+    });
+</script>
+{% endblock %}

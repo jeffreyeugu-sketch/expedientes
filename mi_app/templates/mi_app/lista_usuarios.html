@@ -1,0 +1,155 @@
+{% extends 'mi_app/base.html' %}
+{% load static %}
+
+{% block nav_configuracion %}active{% endblock %}
+
+{% block page_title %}Gestión de Usuarios{% endblock %}
+{% block page_subtitle %}Administra los usuarios del sistema{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'mi_app/css/usuarios.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="stats-summary">
+            <div class="stat-item">
+                <i class="fas fa-users text-primary"></i>
+                <div>
+                    <span class="stat-value">{{ total_usuarios }}</span>
+                    <span class="stat-label">Total Usuarios</span>
+                </div>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-user-check text-success"></i>
+                <div>
+                    <span class="stat-value">{{ usuarios_activos }}</span>
+                    <span class="stat-label">Activos</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'nuevo_usuario' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>Lista de Usuarios
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Último Acceso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>
+                            <strong>{{ usuario.username }}</strong>
+                        </td>
+                        <td>{{ usuario.nombre_completo }}</td>
+                        <td>{{ usuario.email|default:"Sin email" }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ usuario.rol }}</span>
+                        </td>
+                        <td>
+                            {% if usuario.activo %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.ultimo_login %}
+                                {{ usuario.ultimo_login|date:"d/m/Y H:i" }}
+                            {% else %}
+                                <span class="text-muted">Nunca</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'editar_usuario' usuario.id %}" 
+                                   class="btn btn-outline-primary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="eliminarUsuario({{ usuario.id }})" 
+                                        class="btn btn-outline-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay usuarios registrados</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function eliminarUsuario(userId) {
+    if (!confirm('¿Estás seguro de desactivar este usuario?')) {
+        return;
+    }
+    
+    fetch(`/usuarios/${userId}/eliminar/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al eliminar usuario');
+        console.error(error);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

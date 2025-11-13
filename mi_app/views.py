@@ -10,38 +10,56 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from .models import Consultation
 import json
+from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from .models import UserProfile
+from .models import Payment, Invoice, ConceptoFactura
 
 
+@login_required
 def lista_pacientes(request):
-    """Lista de todos los pacientes desde la base de datos"""
+    """Lista de pacientes con búsqueda y filtros"""
+    from django.db.models import Q
+    from datetime import datetime
     
-    # Obtener pacientes reales de la base de datos
-    pacientes = Patient.objects.filter(activo=True).order_by('-fecha_registro')
+    # Obtener parámetros de búsqueda
+    busqueda = request.GET.get('busqueda', '')
     
-    # Preparar datos para el template de forma simple
+    # Query base
+    pacientes = Patient.objects.filter(activo=True)
+    
+    # Aplicar búsqueda
+    if busqueda:
+        pacientes = pacientes.filter(
+            Q(nombres__icontains=busqueda) |
+            Q(apellidos__icontains=busqueda) |
+            Q(telefono__icontains=busqueda) |
+            Q(email__icontains=busqueda)
+        )
+    
+    # Ordenar por apellidos
+    pacientes = pacientes.order_by('apellidos', 'nombres')
+    
+    # Preparar datos para el template
     pacientes_data = []
-    hoy = date.today()
-    hace_30_dias = hoy - timedelta(days=30)
-    
     for paciente in pacientes:
-        # Determinar estado simple
-        if paciente.fecha_registro.date() >= hace_30_dias:
-            estado = 'nuevo'
-        else:
-            estado = 'activo'
+        # Contar consultas
+        total_consultas = Consultation.objects.filter(patient=paciente).count()
+        
+        # Última consulta
+        ultima_consulta = Consultation.objects.filter(
+            patient=paciente
+        ).order_by('-fecha_consulta').first()
         
         pacientes_data.append({
-            'id': paciente.id,
-            'nombre': paciente.nombre_completo,
-            'edad': paciente.edad,
-            'telefono': paciente.telefono_principal,
-            'email': paciente.email or 'Sin email',
-            'ultima_consulta': 'Sin consultas',
-            'dias_desde_consulta': 0,
-            'estado': estado,
+            'paciente': paciente,
+            'total_consultas': total_consultas,
+            'ultima_consulta': ultima_consulta,
         })
     
-    # Estadísticas reales
+    # Estadísticas
     ahora = datetime.now()
     total_pacientes = Patient.objects.filter(activo=True).count()
     nuevos_mes = Patient.objects.filter(
@@ -54,29 +72,188 @@ def lista_pacientes(request):
         'pacientes': pacientes_data,
         'total_pacientes': total_pacientes,
         'nuevos_mes': nuevos_mes,
-        'activos_mes': total_pacientes,
-        'citas_pendientes': 0,
+        'busqueda': busqueda,
     }
+    
     return render(request, 'mi_app/lista_pacientes.html', context)
 
+@login_required
 def dashboard(request):
-    """Dashboard con datos reales de la base de datos"""
+    """Dashboard con estadísticas completas y datos reales"""
+    from django.db.models import Sum, Count, Q, Avg
+    from django.utils import timezone
+    from zoneinfo import ZoneInfo
+    from datetime import timedelta
     
-    ahora = datetime.now()
+    mexico_tz = ZoneInfo('America/Mexico_City')
+    ahora = timezone.now().astimezone(mexico_tz)
+    hoy = ahora.date()
+    
+    # Rango del mes actual
+    inicio_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # ==================== PACIENTES ====================
     total_pacientes = Patient.objects.filter(activo=True).count()
-    pacientes_nuevos = Patient.objects.filter(
-        fecha_registro__month=ahora.month,
-        fecha_registro__year=ahora.year
+    pacientes_nuevos_mes = Patient.objects.filter(
+        fecha_registro__gte=inicio_mes,
+        activo=True
     ).count()
     
+    # ==================== CONSULTAS ====================
+    # Consultas de hoy
+    inicio_dia = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
+    fin_dia = ahora.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    consultas_hoy = Consultation.objects.filter(
+        fecha_consulta__gte=inicio_dia,
+        fecha_consulta__lte=fin_dia
+    ).select_related('patient', 'doctor').order_by('fecha_consulta')
+    
+    total_consultas_hoy = consultas_hoy.count()
+    
+    # Consultas de la semana
+    inicio_semana = ahora - timedelta(days=ahora.weekday())
+    inicio_semana = inicio_semana.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    consultas_semana = Consultation.objects.filter(
+        fecha_consulta__gte=inicio_semana,
+        fecha_consulta__lte=fin_dia
+    ).count()
+    
+    # Consultas del mes
+    consultas_mes = Consultation.objects.filter(
+        fecha_consulta__gte=inicio_mes
+    ).count()
+    
+    # ==================== PAGOS ====================
+    # Ingresos del mes
+    pagos_mes = Payment.objects.filter(
+        fecha_creacion__gte=inicio_mes,
+        estado__in=['pagado', 'parcial']
+    )
+    
+    ingresos_mes = pagos_mes.aggregate(Sum('monto_pagado'))['monto_pagado__sum'] or 0
+    
+    # Pagos recientes (últimos 5)
+    pagos_recientes = Payment.objects.select_related(
+        'consultation__patient'
+    ).order_by('-fecha_creacion')[:5]
+    
+    # Consultas completadas sin pago
+    consultas_sin_pago = Consultation.objects.filter(
+        estado='completada'
+    ).exclude(
+        pagos__isnull=False
+    ).count()
+    
+    # Monto pendiente de cobro
+    consultas_pendientes = Consultation.objects.filter(
+        estado='completada',
+        pagos__isnull=True
+    ).count()
+    
+    # ==================== PRÓXIMAS CONSULTAS ====================
+    proximas_consultas = Consultation.objects.filter(
+        fecha_consulta__gt=ahora,
+        estado='programada'
+    ).select_related('patient', 'doctor').order_by('fecha_consulta')[:5]
+    
+    # ==================== ALERTAS ====================
+    alertas = []
+    
+    # Alerta: Consultas sin pago
+    if consultas_sin_pago > 0:
+        alertas.append({
+            'tipo': 'warning',
+            'icono': 'fa-exclamation-triangle',
+            'titulo': 'Pagos Pendientes',
+            'mensaje': f'{consultas_sin_pago} consultas completadas sin registro de pago',
+            'accion_texto': 'Ver Consultas',
+            'accion_url': 'agenda_consultas'
+        })
+    
+    # Alerta: Consultas de hoy
+    if total_consultas_hoy > 0:
+        alertas.append({
+            'tipo': 'info',
+            'icono': 'fa-calendar-day',
+            'titulo': 'Consultas Hoy',
+            'mensaje': f'Tienes {total_consultas_hoy} consultas programadas para hoy',
+            'accion_texto': 'Ver Agenda',
+            'accion_url': 'agenda_consultas'
+        })
+    
+    # ==================== ESTADÍSTICAS PARA GRÁFICAS ====================
+    # Consultas por día de la semana (últimos 7 días)
+    consultas_por_dia = []
+    for i in range(7):
+        dia = hoy - timedelta(days=6-i)
+        inicio = timezone.make_aware(timezone.datetime.combine(dia, timezone.datetime.min.time()))
+        fin = timezone.make_aware(timezone.datetime.combine(dia, timezone.datetime.max.time()))
+        
+        count = Consultation.objects.filter(
+            fecha_consulta__gte=inicio,
+            fecha_consulta__lte=fin
+        ).count()
+        
+        consultas_por_dia.append({
+            'dia': dia.strftime('%a'),
+            'fecha': dia.strftime('%d/%m'),
+            'count': count
+        })
+    
+    # Ingresos por semana (últimas 4 semanas)
+    ingresos_por_semana = []
+    for i in range(4):
+        semana_inicio = inicio_semana - timedelta(weeks=3-i)
+        semana_fin = semana_inicio + timedelta(days=6, hours=23, minutes=59)
+        
+        ingresos = Payment.objects.filter(
+            fecha_creacion__gte=semana_inicio,
+            fecha_creacion__lte=semana_fin,
+            estado__in=['pagado', 'parcial']
+        ).aggregate(Sum('monto_pagado'))['monto_pagado__sum'] or 0
+        
+        ingresos_por_semana.append({
+            'semana': f'S{i+1}',
+            'monto': float(ingresos)
+        })
+    
+    # Métodos de pago más usados
+    metodos_pago = Payment.objects.filter(
+        fecha_creacion__gte=inicio_mes
+    ).values('metodo_pago').annotate(
+        total=Count('id')
+    ).order_by('-total')[:5]
+    
     context = {
+        # Estadísticas principales
         'total_pacientes': total_pacientes,
-        'consultas_hoy': 0,  # Por implementar
-        'consultas_semana': 0,  # Por implementar  
-        'pacientes_nuevos': pacientes_nuevos,
+        'pacientes_nuevos_mes': pacientes_nuevos_mes,
+        'total_consultas_hoy': total_consultas_hoy,
+        'consultas_semana': consultas_semana,
+        'consultas_mes': consultas_mes,
+        'ingresos_mes': ingresos_mes,
+        'consultas_sin_pago': consultas_sin_pago,
+        
+        # Listas
+        'consultas_hoy': consultas_hoy,
+        'proximas_consultas': proximas_consultas,
+        'pagos_recientes': pagos_recientes,
+        'alertas': alertas,
+        
+        # Datos para gráficas
+        'consultas_por_dia': consultas_por_dia,
+        'ingresos_por_semana': ingresos_por_semana,
+        'metodos_pago': metodos_pago,
+        
+        # Fecha actual
+        'fecha_actual': hoy,
     }
+    
     return render(request, 'mi_app/dashboard.html', context)
 
+@login_required
 def nuevo_paciente(request):
     """Formulario para registrar nuevo paciente"""
     if request.method == 'POST':
@@ -88,47 +265,48 @@ def nuevo_paciente(request):
                 apellidos=request.POST.get('apellidos'),
                 fecha_nacimiento=request.POST.get('fecha_nacimiento'),
                 genero=request.POST.get('genero'),
-                ocupacion=request.POST.get('ocupacion', ''),
-                documento_id=request.POST.get('documento_id'),
-                direccion=request.POST.get('direccion', ''),
-                
-                # Información médica
-                tipo_sangre=request.POST.get('tipo_sangre', ''),
-                peso=request.POST.get('peso') or None,
-                altura=request.POST.get('altura') or None,
-                alergias=request.POST.get('alergias', ''),
-                medicamentos_actuales=request.POST.get('medicamentos_actuales', ''),
+                estado_civil=request.POST.get('estado_civil', 'soltero'),
                 
                 # Contacto
-                telefono_principal=request.POST.get('telefono_principal'),
+                telefono=request.POST.get('telefono'),
+                telefono_alternativo=request.POST.get('telefono_alternativo', ''),
                 email=request.POST.get('email', ''),
+                email_alternativo=request.POST.get('email_alternativo', ''),
+                
+                # Dirección
+                direccion=request.POST.get('direccion', ''),
+                ciudad=request.POST.get('ciudad', ''),
+                estado=request.POST.get('estado', ''),
+                codigo_postal=request.POST.get('codigo_postal', ''),
                 
                 # Contacto de emergencia
                 emergencia_nombre=request.POST.get('emergencia_nombre'),
                 emergencia_parentesco=request.POST.get('emergencia_parentesco'),
                 emergencia_telefono=request.POST.get('emergencia_telefono'),
+                emergencia_telefono2=request.POST.get('emergencia_telefono2', ''),
                 
                 # Seguro médico
                 seguro_medico=request.POST.get('seguro_medico', ''),
+                numero_poliza=request.POST.get('numero_poliza', ''),
             )
             
-            # Crear expediente médico vacío
+            # Crear expediente médico automáticamente
             MedicalRecord.objects.create(patient=patient)
             
-            # Mostrar mensaje de éxito
-            messages.success(request, f'Paciente {patient.nombre_completo} registrado exitosamente. ID: #{patient.id:04d}')
+            messages.success(
+                request, 
+                f'Paciente registrado exitosamente: {patient.nombre_completo} - ID: #{patient.id:04d}'
+            )
             
-            # Redirigir al mismo formulario para ver el mensaje
-            return render(request, 'mi_app/nuevo_paciente_simple.html')
+            return redirect('detalle_paciente', paciente_id=patient.id)
             
         except Exception as e:
-            # Si hay error, mostrar mensaje
             messages.error(request, f'Error al registrar paciente: {str(e)}')
-            print(f"Error: {e}")  # Para debugging
+            print(f"Error: {e}")
     
-    # Si es GET, mostrar el formulario
-    return render(request, 'mi_app/nuevo_paciente_simple.html')
+    return render(request, 'mi_app/nuevo_paciente.html')
 
+@login_required
 def detalle_paciente(request, paciente_id):
     """Detalle completo del paciente con historial de consultas mejorado - ACTUALIZADO"""
     try:
@@ -181,6 +359,7 @@ def detalle_paciente(request, paciente_id):
         messages.error(request, 'Paciente no encontrado')
         return redirect('lista_pacientes')
 
+@login_required
 def lista_consultas(request):
     """Lista de consultas"""
     consultas_ejemplo = [
@@ -191,6 +370,7 @@ def lista_consultas(request):
     context = {'consultas': consultas_ejemplo}
     return render(request, 'mi_app/lista_consultas.html', context)
 
+@login_required
 def agenda_consultas(request):
     """Vista de agenda - consultas del día"""
     from datetime import datetime, timedelta
@@ -246,6 +426,7 @@ def agenda_consultas(request):
     
     return render(request, 'mi_app/agenda_consultas.html', context)
 
+@login_required
 def nueva_consulta(request):
     """Formulario para programar nueva consulta"""
     
@@ -317,6 +498,7 @@ def nueva_consulta(request):
     
     return render(request, 'mi_app/nueva_consulta.html', context)
 
+@login_required
 def get_nueva_consulta_context():
     """Helper function para obtener contexto de nueva consulta"""
     return {
@@ -325,6 +507,7 @@ def get_nueva_consulta_context():
         'fecha_hoy': datetime.now().date(),
     }
 
+@login_required
 def detalle_consulta(request, consulta_id):
     """Vista detallada de una consulta específica"""
     try:
@@ -396,7 +579,8 @@ def detalle_consulta(request, consulta_id):
     except Consultation.DoesNotExist:
         messages.error(request, 'Consulta no encontrada')
         return redirect('agenda_consultas')
-    
+
+@login_required    
 @require_POST
 def cancelar_consulta(request, consulta_id):
     """Cancelar una consulta programada"""
@@ -484,6 +668,7 @@ import json
 # Si NO existe, copiarla completa
 # ============================================
 
+@login_required
 def editar_consulta(request, consulta_id):
     """Editar una consulta programada"""
     try:
@@ -610,3 +795,496 @@ def editar_consulta(request, consulta_id):
         messages.error(request, f'Error: {str(e)}')
         print(f"Error general en editar_consulta: {e}")
         return redirect('agenda_consultas')
+
+
+def login_view(request):
+    """Vista de login"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            auth_login(request, user)
+            next_url = request.GET.get('next', 'dashboard')
+            return redirect(next_url)
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos')
+    
+    return render(request, 'mi_app/login.html')
+
+
+def logout_view(request):
+    """Vista de logout"""
+    auth_logout(request)
+    messages.success(request, 'Sesión cerrada exitosamente')
+    return redirect('login')
+
+@login_required
+def lista_usuarios(request):
+    """Lista todos los usuarios del sistema"""
+    usuarios = User.objects.select_related('profile').all().order_by('-date_joined')
+    
+    usuarios_data = []
+    for usuario in usuarios:
+        usuarios_data.append({
+            'id': usuario.id,
+            'username': usuario.username,
+            'nombre_completo': usuario.get_full_name() or usuario.username,
+            'email': usuario.email,
+            'rol': usuario.profile.get_rol_display() if hasattr(usuario, 'profile') else 'N/A',
+            'activo': usuario.is_active,
+            'ultimo_login': usuario.last_login,
+            'fecha_registro': usuario.date_joined,
+        })
+    
+    context = {
+        'usuarios': usuarios_data,
+        'total_usuarios': usuarios.count(),
+        'usuarios_activos': usuarios.filter(is_active=True).count(),
+    }
+    
+    return render(request, 'mi_app/lista_usuarios.html', context)
+
+@login_required
+def nuevo_usuario(request):
+    """Crear nuevo usuario"""
+    if request.method == 'POST':
+        try:
+            # Datos básicos
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            
+            # Datos del perfil
+            rol = request.POST.get('rol')
+            cedula = request.POST.get('cedula_profesional')
+            especialidad = request.POST.get('especialidad')
+            telefono = request.POST.get('telefono')
+            
+            # Validar que el usuario no exista
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'El nombre de usuario ya existe')
+                return render(request, 'mi_app/nuevo_usuario.html')
+            
+            # Crear usuario
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            # Actualizar perfil
+            profile = user.profile
+            profile.rol = rol
+            profile.cedula_profesional = cedula
+            profile.especialidad = especialidad
+            profile.telefono = telefono
+            profile.save()
+            
+            messages.success(request, f'Usuario {username} creado exitosamente')
+            return redirect('lista_usuarios')
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear usuario: {str(e)}')
+    
+    return render(request, 'mi_app/nuevo_usuario.html')
+
+@login_required
+def editar_usuario(request, user_id):
+    """Editar usuario existente"""
+    usuario = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        try:
+            # Actualizar datos básicos
+            usuario.username = request.POST.get('username')
+            usuario.email = request.POST.get('email')
+            usuario.first_name = request.POST.get('first_name')
+            usuario.last_name = request.POST.get('last_name')
+            usuario.is_active = request.POST.get('is_active') == 'on'
+            
+            # Cambiar contraseña solo si se proporciona
+            new_password = request.POST.get('password')
+            if new_password:
+                usuario.set_password(new_password)
+            
+            usuario.save()
+            
+            # Actualizar perfil
+            profile = usuario.profile
+            profile.rol = request.POST.get('rol')
+            profile.cedula_profesional = request.POST.get('cedula_profesional')
+            profile.especialidad = request.POST.get('especialidad')
+            profile.telefono = request.POST.get('telefono')
+            profile.save()
+            
+            messages.success(request, 'Usuario actualizado exitosamente')
+            return redirect('lista_usuarios')
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar usuario: {str(e)}')
+    
+    context = {'usuario': usuario}
+    return render(request, 'mi_app/editar_usuario.html', context)
+
+@login_required
+@require_POST
+def eliminar_usuario(request, user_id):
+    """Eliminar/desactivar usuario"""
+    try:
+        usuario = get_object_or_404(User, id=user_id)
+        
+        # No permitir eliminar al propio usuario
+        if usuario == request.user:
+            return JsonResponse({
+                'success': False,
+                'message': 'No puedes eliminar tu propio usuario'
+            })
+        
+        # Desactivar en lugar de eliminar
+        usuario.is_active = False
+        usuario.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Usuario {usuario.username} desactivado exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error al eliminar usuario: {str(e)}'
+        })
+    
+@login_required
+def perfil_usuario(request):
+    """Vista del perfil del usuario actual"""
+    usuario = request.user
+    
+    if request.method == 'POST':
+        try:
+            # Actualizar datos básicos
+            usuario.first_name = request.POST.get('first_name')
+            usuario.last_name = request.POST.get('last_name')
+            usuario.email = request.POST.get('email')
+            
+            # Cambiar contraseña solo si se proporciona
+            password_actual = request.POST.get('password_actual')
+            password_nueva = request.POST.get('password_nueva')
+            password_confirmar = request.POST.get('password_confirmar')
+            
+            if password_actual and password_nueva:
+                if usuario.check_password(password_actual):
+                    if password_nueva == password_confirmar:
+                        usuario.set_password(password_nueva)
+                        messages.success(request, 'Contraseña actualizada. Por favor inicia sesión nuevamente.')
+                        auth_logout(request)
+                        return redirect('login')
+                    else:
+                        messages.error(request, 'Las contraseñas nuevas no coinciden')
+                        return render(request, 'mi_app/perfil_usuario.html', {'usuario': usuario})
+                else:
+                    messages.error(request, 'La contraseña actual es incorrecta')
+                    return render(request, 'mi_app/perfil_usuario.html', {'usuario': usuario})
+            
+            usuario.save()
+            
+            # Actualizar perfil
+            profile = usuario.profile
+            profile.telefono = request.POST.get('telefono')
+            profile.cedula_profesional = request.POST.get('cedula_profesional')
+            profile.especialidad = request.POST.get('especialidad')
+            profile.save()
+            
+            messages.success(request, 'Perfil actualizado exitosamente')
+            return redirect('perfil_usuario')
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar perfil: {str(e)}')
+    
+    context = {'usuario': usuario}
+    return render(request, 'mi_app/perfil_usuario.html', context)
+
+@login_required    
+def calendario_consultas(request):
+    """Vista de calendario mensual para consultas"""
+    from datetime import datetime, timedelta
+    from calendar import monthrange
+    from django.utils import timezone
+    from zoneinfo import ZoneInfo
+    import json
+    
+    mexico_tz = ZoneInfo('America/Mexico_City')
+    ahora_mexico = timezone.now().astimezone(mexico_tz)
+    
+    # Obtener mes y año de la URL o usar actual
+    mes = int(request.GET.get('mes', ahora_mexico.month))
+    anio = int(request.GET.get('anio', ahora_mexico.year))
+    
+    # Calcular mes anterior y siguiente
+    if mes == 1:
+        mes_anterior = 12
+        anio_anterior = anio - 1
+    else:
+        mes_anterior = mes - 1
+        anio_anterior = anio
+    
+    if mes == 12:
+        mes_siguiente = 1
+        anio_siguiente = anio + 1
+    else:
+        mes_siguiente = mes + 1
+        anio_siguiente = anio
+    
+    # Límites del mes
+    primer_dia = datetime(anio, mes, 1, tzinfo=mexico_tz)
+    ultimo_dia_numero = monthrange(anio, mes)[1]
+    ultimo_dia = datetime(anio, mes, ultimo_dia_numero, 23, 59, 59, tzinfo=mexico_tz)
+    
+    # Obtener filtros
+    doctor_filtro = request.GET.get('doctor')
+    estado_filtro = request.GET.get('estado')
+    
+    # Consultas del mes con filtros aplicados
+    consultas = Consultation.objects.filter(
+        fecha_consulta__gte=primer_dia,
+        fecha_consulta__lte=ultimo_dia
+    ).select_related('patient', 'doctor')
+    
+    if doctor_filtro:
+        consultas = consultas.filter(doctor_id=doctor_filtro)
+    
+    if estado_filtro:
+        consultas = consultas.filter(estado=estado_filtro)
+    
+    consultas = consultas.order_by('fecha_consulta')
+    
+    # Agrupar por día
+    consultas_por_dia = {}
+    for consulta in consultas:
+        dia = consulta.fecha_consulta.day
+        if dia not in consultas_por_dia:
+            consultas_por_dia[dia] = []
+        consultas_por_dia[dia].append({
+            'id': consulta.id,
+            'paciente': consulta.patient.nombre_completo,
+            'hora': consulta.fecha_consulta.strftime('%H:%M'),
+            'tipo': consulta.tipo_consulta,
+            'estado': consulta.estado,
+        })
+    
+    # Doctores para filtro
+    doctores = Doctor.objects.filter(activo=True)
+    pacientes = Patient.objects.filter(activo=True).order_by('apellidos', 'nombres')
+    
+    context = {
+        'mes': mes,
+        'anio': anio,
+        'mes_anterior': mes_anterior,
+        'anio_anterior': anio_anterior,
+        'mes_siguiente': mes_siguiente,
+        'anio_siguiente': anio_siguiente,
+        'mes_nombre': primer_dia.strftime('%B'),
+        'dias_mes': ultimo_dia_numero,
+        'primer_dia_semana': primer_dia.weekday(),
+        'consultas_por_dia': json.dumps(consultas_por_dia),
+        'hoy': ahora_mexico.date(),
+        'doctores': doctores,
+        'pacientes': pacientes,
+        'doctor_filtro': doctor_filtro,
+        'estado_filtro': estado_filtro,
+    }
+    
+    return render(request, 'mi_app/calendario_consultas.html', context)
+
+@login_required 
+def registrar_pago(request, consulta_id):
+    """Registrar pago de una consulta"""
+    try:
+        consulta = Consultation.objects.get(id=consulta_id)
+        
+        if request.method == 'POST':
+            monto_total = request.POST.get('monto_total')
+            monto_pagado = request.POST.get('monto_pagado', monto_total)
+            descuento = request.POST.get('descuento', 0)
+            metodo_pago = request.POST.get('metodo_pago')
+            referencia = request.POST.get('referencia', '')
+            notas = request.POST.get('notas', '')
+            
+            # Crear pago
+            pago = Payment.objects.create(
+                consultation=consulta,
+                monto_total=monto_total,
+                monto_pagado=monto_pagado,
+                descuento=descuento,
+                metodo_pago=metodo_pago,
+                referencia=referencia,
+                notas=notas,
+                fecha_pago=timezone.now()
+            )
+            
+            # Determinar estado
+            if float(monto_pagado) >= pago.monto_final:
+                pago.estado = 'pagado'
+            elif float(monto_pagado) > 0:
+                pago.estado = 'parcial'
+            else:
+                pago.estado = 'pendiente'
+            
+            pago.save()
+            
+            messages.success(request, f'Pago registrado correctamente. Folio: #{pago.id}')
+            
+            # Preguntar si desea generar factura
+            if request.POST.get('generar_factura') == 'si':
+                return redirect('generar_factura', pago_id=pago.id)
+            
+            return redirect('detalle_consulta', consulta_id=consulta.id)
+        
+        # GET - Mostrar formulario
+        # Verificar si ya existe un pago
+        pago_existente = Payment.objects.filter(consultation=consulta).first()
+        
+        context = {
+            'consulta': consulta,
+            'pago_existente': pago_existente,
+        }
+        
+        return render(request, 'mi_app/registrar_pago.html', context)
+        
+    except Consultation.DoesNotExist:
+        messages.error(request, 'Consulta no encontrada')
+        return redirect('agenda_consultas')
+
+@login_required 
+def lista_pagos(request):
+    """Lista de todos los pagos"""
+    
+    # Filtros
+    estado_filtro = request.GET.get('estado', '')
+    metodo_filtro = request.GET.get('metodo', '')
+    fecha_desde = request.GET.get('fecha_desde', '')
+    fecha_hasta = request.GET.get('fecha_hasta', '')
+    
+    pagos = Payment.objects.all().select_related(
+        'consultation__patient',
+        'consultation__doctor'
+    ).order_by('-fecha_creacion')
+    
+    if estado_filtro:
+        pagos = pagos.filter(estado=estado_filtro)
+    
+    if metodo_filtro:
+        pagos = pagos.filter(metodo_pago=metodo_filtro)
+    
+    if fecha_desde:
+        pagos = pagos.filter(fecha_creacion__gte=fecha_desde)
+    
+    if fecha_hasta:
+        pagos = pagos.filter(fecha_creacion__lte=fecha_hasta)
+    
+    # Estadísticas
+    from django.db.models import Sum, Count
+    stats = {
+        'total_pagos': pagos.count(),
+        'monto_total': pagos.aggregate(Sum('monto_pagado'))['monto_pagado__sum'] or 0,
+        'pagos_pendientes': pagos.filter(estado='pendiente').count(),
+        'pagos_completados': pagos.filter(estado='pagado').count(),
+    }
+    
+    context = {
+        'pagos': pagos[:50],  # Primeros 50
+        'stats': stats,
+        'estado_filtro': estado_filtro,
+        'metodo_filtro': metodo_filtro,
+    }
+    
+    return render(request, 'mi_app/lista_pagos.html', context)
+
+@login_required 
+def generar_factura(request, pago_id):
+    """Generar factura para un pago"""
+    try:
+        pago = Payment.objects.get(id=pago_id)
+        
+        # Verificar si ya tiene factura
+        if hasattr(pago, 'factura'):
+            messages.warning(request, 'Este pago ya tiene una factura generada')
+            return redirect('detalle_factura', factura_id=pago.factura.id)
+        
+        if request.method == 'POST':
+            # Generar folio único
+            import random
+            folio = f"FAC-{timezone.now().year}-{random.randint(10000, 99999)}"
+            
+            # Calcular IVA (16%)
+            subtotal = pago.monto_final
+            iva = subtotal * 0.16
+            total = subtotal + iva
+            
+            # Crear factura
+            factura = Invoice.objects.create(
+                payment=pago,
+                folio=folio,
+                tipo_comprobante=request.POST.get('tipo_comprobante'),
+                cliente_nombre=request.POST.get('cliente_nombre'),
+                cliente_rfc=request.POST.get('cliente_rfc', ''),
+                cliente_direccion=request.POST.get('cliente_direccion', ''),
+                cliente_email=request.POST.get('cliente_email', ''),
+                subtotal=subtotal,
+                iva=iva,
+                total=total,
+            )
+            
+            # Crear concepto
+            ConceptoFactura.objects.create(
+                factura=factura,
+                cantidad=1,
+                descripcion=f"Consulta médica - {pago.consultation.get_tipo_consulta_display()}",
+                precio_unitario=subtotal,
+                importe=subtotal,
+            )
+            
+            messages.success(request, f'Factura generada correctamente. Folio: {folio}')
+            return redirect('detalle_factura', factura_id=factura.id)
+        
+        # GET - Mostrar formulario
+        paciente = pago.consultation.patient
+        
+        context = {
+            'pago': pago,
+            'paciente': paciente,
+        }
+        
+        return render(request, 'mi_app/generar_factura.html', context)
+        
+    except Payment.DoesNotExist:
+        messages.error(request, 'Pago no encontrado')
+        return redirect('lista_pagos')
+
+@login_required
+def detalle_factura(request, factura_id):
+    """Ver detalle de una factura"""
+    try:
+        factura = Invoice.objects.get(id=factura_id)
+        conceptos = factura.conceptos.all()
+        
+        context = {
+            'factura': factura,
+            'conceptos': conceptos,
+        }
+        
+        return render(request, 'mi_app/detalle_factura.html', context)
+        
+    except Invoice.DoesNotExist:
+        messages.error(request, 'Factura no encontrada')
+        return redirect('lista_pagos')
